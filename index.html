@@ -1,0 +1,844 @@
+Ashiya voice board v6 · HTML
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>みんなで創ろう！山手町</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1b1f1d; --board:#23282a; --board-2:#2c3234;
+  --paper:#eef0e4; --paper-2:#e3e6d8;
+  --amber:#e8a33d; --amber-deep:#c9821f;
+  --teal:#2f7a6b; --teal-deep:#22594e;
+  --clay:#c1502f; --violet:#6d5aa8; --violet-deep:#4d3e80;
+  --line:#3a4143; --line-light:#d8dcc9;
+}
+*{margin:0;padding:0;box-sizing:border-box;overflow-wrap:break-word;}
+html{scroll-behavior:smooth;}
+body{font-family:"Zen Kaku Gothic New",sans-serif;background:var(--paper);color:var(--ink);line-height:1.7;font-size:16px;}
+h1,h2,h3,h4,.brand{font-family:"Klee One","Zen Kaku Gothic New",sans-serif;}
+.mono{font-family:"JetBrains Mono",monospace;}
+img{max-width:100%;display:block;border-radius:4px;}
+button{cursor:pointer;font-family:inherit;}
+ 
+.topbar{position:sticky;top:0;z-index:999;background:var(--board);border-bottom:4px solid var(--amber);
+  padding:14px 22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.brand{color:var(--paper);font-size:17px;font-weight:800;display:flex;align-items:center;gap:8px;line-height:1.3;}
+.brand span.dot{width:9px;height:9px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 3px rgba(47,122,107,.3);flex-shrink:0;}
+nav{display:flex;gap:8px;flex-wrap:wrap;}
+nav button{border:1.5px solid var(--line);background:var(--board-2);color:var(--paper);padding:9px 16px;border-radius:6px;
+  font-weight:700;font-size:13.5px;letter-spacing:.02em;transition:.15s;}
+nav button:hover{border-color:var(--amber);color:var(--amber);}
+nav button.active{background:var(--amber);color:var(--ink);border-color:var(--amber);}
+ 
+.page{display:none;max-width:1160px;margin:0 auto;padding:36px 20px 80px;animation:fade .25s ease;}
+.page.active{display:block;}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+ 
+.card{background:var(--paper);border:1.5px solid var(--line-light);border-radius:10px;padding:26px 28px;margin-bottom:22px;box-shadow:0 3px 0 var(--line-light);}
+h1{font-size:28px;font-weight:800;margin-bottom:14px;}
+h2{font-size:19px;font-weight:800;margin-bottom:12px;}
+h3{font-size:15px;font-weight:700;margin:14px 0 8px;color:var(--teal-deep);}
+p{color:#33372f;}
+ 
+.hero{background:var(--board);border-radius:12px;padding:44px 32px;margin-bottom:26px;position:relative;overflow:hidden;}
+.hero::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.05) 1.5px,transparent 1.5px);background-size:22px 22px;}
+.sticky{position:relative;z-index:1;display:inline-block;background:var(--amber);color:var(--ink);padding:18px 24px;border-radius:3px;
+  transform:rotate(-1.5deg);box-shadow:0 10px 24px rgba(0,0,0,.35);font-size:24px;font-weight:800;line-height:1.5;max-width:620px;}
+.sticky::before{content:"";position:absolute;top:-10px;left:36px;width:60px;height:20px;background:rgba(255,255,255,.55);transform:rotate(-4deg);}
+.hero-sub{position:relative;z-index:1;color:#cfd6c9;margin-top:20px;max-width:600px;font-size:14px;}
+.hero-tag{position:relative;z-index:1;display:inline-block;margin-top:16px;color:var(--teal);font-family:"JetBrains Mono",monospace;font-size:11.5px;border:1px solid var(--teal);padding:4px 10px;border-radius:999px;letter-spacing:.05em;}
+.hero-illust{position:relative;z-index:1;display:block;width:100%;max-width:640px;height:auto;margin:0 auto 18px;}
+.beacon-ring{transform-origin:500px 108px;animation:beaconPulse 2.4s ease-out infinite;}
+@keyframes beaconPulse{
+  0%{r:6;opacity:.6;}
+  100%{r:38;opacity:0;}
+}
+.hero-cta-row{position:relative;z-index:1;display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:20px;}
+@media(prefers-reduced-motion: reduce){.beacon-ring{animation:none;}}
+ 
+/* ===== MAP & UPDATE BOARDS (home top) ===== */
+.section-lead{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;}
+.section-lead h2{margin-bottom:0;}
+.section-lead .tag{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--teal-deep);border:1px solid var(--teal);padding:2px 9px;border-radius:999px;}
+.map-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.map-card, .update-card{border-radius:10px;padding:18px 20px;border:1.5px solid var(--line-light);position:relative;}
+.map-card{background:#fff;}
+.map-card::before{content:"🗺️ 未来提案の原点｜アイデアの地図";display:block;font-size:11.5px;font-weight:700;color:var(--teal-deep);margin-bottom:8px;letter-spacing:.02em;}
+.map-card .cat-name{font-size:14.5px;font-weight:800;margin-bottom:8px;}
+.map-card .body-text{font-size:13px;color:#3d4235;line-height:1.85;}
+.update-card{background:var(--paper-2);}
+.update-card .head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;}
+.update-card .lbl{font-size:11.5px;font-weight:700;color:var(--violet-deep);letter-spacing:.02em;}
+.update-btn{
+  border:none;background:var(--violet);color:#fff;font-weight:700;font-size:12px;
+  padding:7px 14px;border-radius:6px;box-shadow:0 3px 0 var(--violet-deep);transition:.12s;flex-shrink:0;
+}
+.update-btn:hover{transform:translateY(1px);box-shadow:0 2px 0 var(--violet-deep);}
+.update-btn.close{background:#8b8f7f;box-shadow:0 3px 0 #6d7160;}
+.update-body{display:none;margin-top:10px;font-size:13px;color:#3d3550;line-height:1.85;background:#fff;border-radius:8px;padding:12px 14px;border:1px dashed var(--violet);}
+.update-body.show{display:block;}
+.update-loading{font-size:12px;color:var(--violet-deep);font-family:"JetBrains Mono",monospace;}
+.update-placeholder{font-size:12.5px;color:#8b8f7f;}
+ 
+.flow3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px;}
+.flow-step{background:var(--paper);border:1.5px dashed var(--line-light);border-radius:8px;padding:18px;text-align:center;}
+.flow-step .num{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--amber-deep);font-size:12px;letter-spacing:.1em;margin-bottom:6px;}
+.flow-step .ic{font-size:26px;margin-bottom:6px;}
+.flow-step h4{font-size:14.5px;font-weight:700;margin-bottom:4px;}
+.flow-step p{font-size:12.5px;color:#5a5f52;}
+ 
+.feature-list{list-style:none;}
+.feature-list li{padding:9px 0;border-bottom:1px solid var(--line-light);font-size:14.5px;display:flex;gap:8px;}
+.feature-list li b{color:var(--teal-deep);}
+.note-box{background:var(--paper-2);border-left:4px solid var(--clay);border-radius:6px;padding:14px 16px;font-size:13.5px;color:#4a3626;margin-top:16px;}
+ 
+.big-btn{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:7px;border:none;
+  background:var(--teal);color:#fff;font-weight:700;font-size:15px;box-shadow:0 4px 0 var(--teal-deep);transition:.12s;}
+.big-btn:hover{transform:translateY(2px);box-shadow:0 2px 0 var(--teal-deep);}
+.big-btn.amber{background:var(--amber);color:var(--ink);box-shadow:0 4px 0 var(--amber-deep);}
+.big-btn.ghost{background:var(--paper);color:var(--ink);border:1.5px solid var(--line-light);box-shadow:none;}
+.big-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+ 
+.assist-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.notepad{background:repeating-linear-gradient(var(--paper) 0 31px, var(--line-light) 31px 32px);border:1.5px solid var(--line-light);border-radius:8px;padding:16px 18px;position:relative;}
+.notepad::before{content:"";position:absolute;left:34px;top:0;bottom:0;width:1.5px;background:var(--clay);opacity:.35;}
+textarea{width:100%;min-height:220px;padding-left:20px;background:transparent;border:none;resize:vertical;font-family:inherit;font-size:15px;line-height:32px;color:var(--ink);}
+textarea:focus{outline:none;}
+.report-slip{background:#fff;border:1.5px solid var(--line-light);border-radius:8px;min-height:220px;padding:20px 20px 18px;position:relative;}
+.report-slip::before{content:"AI 整理票";position:absolute;top:-11px;left:16px;background:var(--ink);color:var(--paper);font-family:"JetBrains Mono",monospace;font-size:11px;padding:3px 10px;border-radius:4px;letter-spacing:.05em;}
+.slip-empty{color:#9aa08e;font-size:14px;padding-top:8px;}
+.slip-row{margin-bottom:12px;}
+.slip-label{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--teal-deep);letter-spacing:.05em;margin-bottom:4px;}
+.slip-value{font-size:14px;line-height:1.7;}
+.slip-tag{display:inline-block;background:var(--paper-2);border:1px solid var(--line-light);border-radius:999px;padding:3px 12px;font-size:12.5px;font-weight:700;color:var(--teal-deep);margin-right:6px;}
+.persp-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;}
+.persp-box{background:var(--paper-2);border-radius:6px;padding:8px 10px;}
+.persp-box .pl{font-size:10.5px;font-weight:700;color:var(--violet-deep);margin-bottom:2px;}
+.persp-box .pv{font-size:12px;color:#3a3f33;line-height:1.6;}
+.confirm-box{margin-top:16px;padding-top:14px;border-top:1.5px dashed var(--line-light);}
+.confirm-box p{font-weight:700;margin-bottom:10px;font-size:14px;}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;}
+.loading{color:var(--amber-deep);font-size:13.5px;font-family:"JetBrains Mono",monospace;}
+.merge-banner{background:#efe9fb;border-left:4px solid var(--violet);border-radius:6px;padding:12px 14px;font-size:13px;color:var(--violet-deep);margin-top:10px;line-height:1.7;}
+ 
+.settings-panel{background:var(--paper-2);border:1.5px dashed var(--line-light);border-radius:8px;padding:12px 16px;margin-bottom:18px;}
+.settings-head{display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:13px;font-weight:700;color:var(--teal-deep);}
+.settings-body{display:none;margin-top:10px;}
+.settings-body.open{display:block;}
+.settings-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
+.settings-row input[type=text]{flex:1;min-width:200px;padding:8px 10px;border:1.5px solid var(--line-light);border-radius:6px;font-size:12.5px;font-family:"JetBrains Mono",monospace;}
+.settings-row button{border:none;background:var(--teal);color:#fff;padding:8px 14px;border-radius:6px;font-size:12.5px;font-weight:700;}
+.settings-status{font-size:11.5px;color:#5a5f52;}
+.author-row{margin-bottom:14px;}
+.author-row label{font-size:12.5px;font-weight:700;color:var(--teal-deep);display:block;margin-bottom:4px;}
+.author-row input[type=text]{width:100%;padding:9px 12px;border:1.5px solid var(--line-light);border-radius:6px;font-size:14px;background:#fff;}
+ 
+.cork-intro{background:var(--board);color:var(--paper);border-radius:10px;padding:22px 26px;margin-bottom:22px;}
+.cork-intro h2{color:#fff;}
+.cork-intro p{color:#c7cdbb;font-size:14px;}
+.cork-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:8px;}
+.pin-card{background:var(--paper);border:1.5px solid var(--line-light);border-radius:8px;padding:16px 10px;text-align:center;cursor:pointer;position:relative;transition:.15s;box-shadow:0 3px 0 var(--line-light);}
+.pin-card:hover{transform:translateY(-3px);}
+.pin-card.open{border-color:var(--amber);box-shadow:0 3px 0 var(--amber);}
+.pin-card .tape{position:absolute;top:-8px;left:50%;transform:translateX(-50%) rotate(-2deg);width:42px;height:14px;background:rgba(232,163,61,.55);}
+.pin-card .ic{font-size:24px;margin-bottom:6px;}
+.pin-card .lbl{font-size:12.5px;font-weight:700;line-height:1.35;}
+.pin-card .cnt{margin-top:8px;display:inline-block;font-family:"JetBrains Mono",monospace;font-size:11px;background:var(--teal);color:#fff;border-radius:999px;padding:2px 9px;}
+.cnt.zero{background:#a3a89a;}
+ 
+.detail-panel{display:none;background:#fff;border:1.5px solid var(--line-light);border-radius:10px;padding:22px 24px;margin-top:16px;}
+.detail-title{font-size:16px;font-weight:800;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--paper-2);}
+.sub-block{margin-bottom:10px;border:1.5px solid var(--line-light);border-radius:8px;overflow:hidden;}
+.sub-head{padding:11px 15px;background:var(--paper-2);display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-weight:700;font-size:14px;}
+.sub-head:hover{background:var(--paper);}
+.sub-head .dynamic-flag{font-size:10px;background:var(--violet);color:#fff;border-radius:999px;padding:1px 8px;margin-left:6px;font-weight:700;}
+.sub-body{display:none;padding:12px 15px;border-top:1px solid var(--line-light);}
+.idea-note{background:var(--paper);border-left:4px solid var(--teal);border-radius:6px;padding:11px 14px;margin-bottom:8px;cursor:pointer;transition:.12s;}
+.idea-note.seed{border-left-color:var(--amber-deep);}
+.idea-note.merged{border-left-color:var(--violet);}
+.idea-note:hover{transform:translateX(2px);box-shadow:0 2px 8px rgba(0,0,0,.08);}
+.idea-note .t{font-size:13.5px;font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.idea-note .badge{font-size:10px;font-family:"JetBrains Mono",monospace;border-radius:999px;padding:1px 8px;font-weight:700;flex-shrink:0;}
+.badge.b-seed{background:var(--amber);color:var(--ink);}
+.badge.b-proposal{background:var(--teal);color:#fff;}
+.badge.b-merged{background:var(--violet);color:#fff;}
+.idea-note .m{font-size:11px;color:#7c8172;font-family:"JetBrains Mono",monospace;margin-top:3px;}
+.idea-full{display:none;margin-top:8px;padding:12px 14px;background:#fff;border:1px solid var(--line-light);border-radius:6px;font-size:13.5px;color:#3a3f33;line-height:1.8;}
+.idea-full .persp-grid{margin-top:10px;}
+.idea-full .mreason{background:#efe9fb;border-left:3px solid var(--violet);border-radius:6px;padding:9px 11px;margin-top:10px;font-size:12.5px;color:var(--violet-deep);}
+.archive-toggle{margin-top:10px;font-size:12px;color:var(--teal-deep);font-weight:700;cursor:pointer;display:inline-block;}
+.archive-list{display:none;margin-top:8px;padding-left:10px;border-left:2px dashed var(--line-light);}
+.archive-item{background:var(--paper-2);border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:12px;}
+.archive-item .at{font-weight:700;}
+.archive-item .as{color:#5a5f52;margin-top:3px;}
+.empty-note{font-size:13px;color:#9aa08e;padding:6px 2px;}
+ 
+@media(max-width:900px){
+  .assist-layout{grid-template-columns:1fr;}
+  .flow3{grid-template-columns:1fr;}
+  .cork-grid{grid-template-columns:repeat(3,1fr);}
+  .map-row{grid-template-columns:1fr;}
+  .persp-grid{grid-template-columns:1fr;}
+  .sticky{font-size:19px;}
+  .hero-cta-row{flex-direction:column;align-items:flex-start;}
+}
+@media(max-width:560px){.cork-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:640px){
+  .persp-grid{grid-template-columns:1fr !important;}
+  .persp-box{grid-column:auto !important;padding:10px 12px !important;}
+  .persp-box .pv{font-size:13px !important;}
+}  
+</style>
+</head>
+<body>
+ 
+<header class="topbar">
+  <div class="brand"><span class="dot"></span>🗣️ みんなで創ろう！山手町</div>
+  <nav>
+    <button class="active" onclick="showPage('home',this)">ホーム</button>
+    <button onclick="showPage('assist',this)">声を届ける</button>
+    <button onclick="showPage('tree',this)">声のボード</button>
+  </nav>
+</header>
+ 
+<main>
+ 
+<!-- ================= HOME ================= -->
+<section id="home" class="page active">
+ 
+  <div class="hero">
+    <svg class="hero-illust" viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="市民の声がAIによって5つのテーマに整理される様子のイラスト">
+      <!-- skyline -->
+      <polygon points="20,260 90,150 150,260" fill="#2f7a6b" opacity="0.35"/>
+      <polygon points="70,260 120,180 165,260" fill="#2f7a6b" opacity="0.5"/>
+      <path d="M600,260 Q625,240 650,260 T700,260 T750,260 L780,260 L780,300 L600,300 Z" fill="#2f7a6b" opacity="0.3"/>
+      <rect x="640" y="205" width="26" height="55" rx="2" fill="#3a4143" opacity="0.5"/>
+      <rect x="672" y="185" width="22" height="75" rx="2" fill="#3a4143" opacity="0.4"/>
+      <rect x="700" y="220" width="30" height="40" rx="2" fill="#3a4143" opacity="0.5"/>
+ 
+      <!-- connecting dashed lines from speech bubbles to the AI beacon -->
+      <path d="M175,150 Q300,80 470,118" fill="none" stroke="#e8a33d" stroke-width="2" stroke-dasharray="5 6" opacity="0.7"/>
+      <path d="M330,138 Q400,95 470,112" fill="none" stroke="#2f7a6b" stroke-width="2" stroke-dasharray="5 6" opacity="0.7"/>
+      <path d="M470,168 Q480,140 486,122" fill="none" stroke="#c1502f" stroke-width="2" stroke-dasharray="5 6" opacity="0.7"/>
+ 
+      <!-- citizens -->
+      <g>
+        <circle cx="160" cy="200" r="16" fill="#eef0e4"/>
+        <path d="M138,244 q22,-26 44,0 z" fill="#eef0e4"/>
+        <rect x="128" y="115" width="66" height="34" rx="14" fill="#e8a33d"/>
+        <polygon points="150,149 158,163 168,149" fill="#e8a33d"/>
+        <circle cx="148" cy="132" r="3" fill="#1b1f1d"/><circle cx="161" cy="132" r="3" fill="#1b1f1d"/><circle cx="174" cy="132" r="3" fill="#1b1f1d"/>
+      </g>
+      <g>
+        <circle cx="310" cy="215" r="17" fill="#eef0e4"/>
+        <path d="M286,260 q24,-28 48,0 z" fill="#eef0e4"/>
+        <rect x="288" y="103" width="66" height="34" rx="14" fill="#2f7a6b"/>
+        <polygon points="310,137 318,151 328,137" fill="#2f7a6b"/>
+        <circle cx="308" cy="120" r="3" fill="#fff"/><circle cx="321" cy="120" r="3" fill="#fff"/><circle cx="334" cy="120" r="3" fill="#fff"/>
+      </g>
+      <g>
+        <circle cx="450" cy="205" r="16" fill="#eef0e4"/>
+        <path d="M428,249 q22,-26 44,0 z" fill="#eef0e4"/>
+        <rect x="440" y="150" width="60" height="32" rx="13" fill="#c1502f"/>
+        <polygon points="461,182 468,195 477,182" fill="#c1502f"/>
+        <circle cx="458" cy="166" r="3" fill="#fff"/><circle cx="470" cy="166" r="3" fill="#fff"/><circle cx="482" cy="166" r="3" fill="#fff"/>
+      </g>
+ 
+      <!-- AI beacon -->
+      <circle cx="500" cy="108" r="6" fill="none" stroke="#e8a33d" stroke-width="1.5" opacity="0.5" class="beacon-ring"/>
+      <circle cx="500" cy="108" r="30" fill="#e8a33d"/>
+      <path d="M500,90 L505,103 L518,108 L505,113 L500,126 L495,113 L482,108 L495,103 Z" fill="#1b1f1d"/>
+ 
+      <!-- 5 theme badges fanning out -->
+      <g font-size="15" text-anchor="middle" dominant-baseline="central">
+        <line x1="500" y1="108" x2="430" y2="52" stroke="#d8dcc9" stroke-width="1.5"/>
+        <circle cx="430" cy="52" r="16" fill="#2f7a6b"/><text x="430" y="53" fill="#fff">🏙️</text>
+        <line x1="500" y1="108" x2="472" y2="30" stroke="#d8dcc9" stroke-width="1.5"/>
+        <circle cx="472" cy="30" r="16" fill="#e8a33d"/><text x="472" y="31" fill="#1b1f1d">👶</text>
+        <line x1="500" y1="108" x2="524" y2="24" stroke="#d8dcc9" stroke-width="1.5"/>
+        <circle cx="524" cy="24" r="16" fill="#c1502f"/><text x="524" y="25" fill="#fff">🤝</text>
+        <line x1="500" y1="108" x2="576" y2="30" stroke="#d8dcc9" stroke-width="1.5"/>
+        <circle cx="576" cy="30" r="16" fill="#5f8a4c"/><text x="576" y="31" fill="#fff">🌳</text>
+        <line x1="500" y1="108" x2="618" y2="52" stroke="#d8dcc9" stroke-width="1.5"/>
+        <circle cx="618" cy="52" r="16" fill="#6d5aa8"/><text x="618" y="53" fill="#fff">🏛️</text>
+      </g>
+    </svg>
+ 
+    <div class="sticky">みんなで創ろう<br>山手町</div>
+    <p class="hero-sub">山手町、そして芦屋の街への想い、ちょっとした気づき——そのまま書き込むだけでOK。あとはAIが読み取って、5つのテーマにきれいに整理してくれます。むずかしい入力フォームも、専門知識もいりません。</p>
+    <div class="hero-cta-row">
+      <button class="big-btn amber" onclick="showPage('assist')">✍️ さっそく声を届けてみる</button>
+      <div class="hero-tag">みんなの声 → AI整理 → 政策提案ボード</div>
+    </div>
+  </div>
+ 
+  <div class="section-lead"><h2>🗺️ 5つのテーマ｜地図とアップデート</h2><span class="tag">BASE VISION × LIVE UPDATE</span></div>
+  <p style="margin-bottom:14px;font-size:13.5px;color:#5a5f52;">左側は最初から変わらない「未来提案の原点」、右側はボタンを押すとその時点の市民の声を反映した最新のアップデート案がその場に表示されます（もう一度押すと閉じます）。</p>
+  <div id="mapUpdateWrap"></div>
+ 
+  <div class="card">
+    <h2>使い方は3ステップ</h2>
+    <div class="flow3">
+      <div class="flow-step"><div class="num">STEP 01</div><div class="ic">✍️</div><h4>自由に書く</h4><p>形式は不要。感じたことをそのまま。</p></div>
+      <div class="flow-step"><div class="num">STEP 02</div><div class="ic">🤖</div><h4>AIが整理する</h4><p>5つの視点・要約・タイトル・テーマを自動生成。</p></div>
+      <div class="flow-step"><div class="num">STEP 03</div><div class="ic">📌</div><h4>ボードに掲示</h4><p>同じテーマの声はリアルタイムに統合されます。</p></div>
+    </div>
+  </div>
+ 
+  <div class="card">
+    <h2>できること</h2>
+    <ul class="feature-list">
+      <li><b>①</b> 思いついたまま自由記述できる（設問なし）</li>
+      <li><b>②</b> AIが「核心・変化・成功事例・懸念点・問い」の5視点で分析</li>
+      <li><b>③</b> 5つのテーマ×中分類でボードに自動分類（その他が3件たまると新しい中分類が自動生成）</li>
+      <li><b>④</b> 似たテーマの提案は既存の統合記事とリアルタイムに統合され、元の記事は履歴として保存されます</li>
+    </ul>
+    <div class="note-box">ボードの初期投稿の一部は、たたき台としての模擬投稿（新統合）です。実際の声が集まるにつれて統合・更新されていきます。</div>
+    <div style="margin-top:18px;"><button class="big-btn amber" onclick="showPage('assist')">🤖 声を届けてみる</button></div>
+  </div>
+</section>
+ 
+<!-- ================= AI ASSISTANT ================= -->
+<section id="assist" class="page">
+  <h1>🤖 声を届ける</h1>
+  <p style="margin-bottom:18px;color:#5a5f52;">まちについて思っていることを自由に書いてください。AIが「核心・変化・成功事例・懸念点・問い」の5つの視点で読み解き、要約・タイトル・テーマを整理します。</p>
+ 
+  <div class="settings-panel">
+    <div class="settings-head" onclick="this.nextElementSibling.classList.toggle('open')">🔗 連携設定（クリックで開閉）</div>
+    <div class="settings-body">
+      <div class="settings-row">
+        <input type="text" id="gasUrlInput" placeholder="">
+        <button onclick="saveGasUrl()">保存</button>
+      </div>
+      <div class="settings-status" id="gasUrlStatus">未設定：AI分析・スプレッドシート記録のどちらも動作しません。</div>
+      <div class="settings-status" style="margin-top:4px;">※ここでの保存はこのブラウザだけの一時確認用です。全員が使えるようにするには、コード内の<code>GAS_URL_DEFAULT</code>に直接URLを貼り付けて公開してください。</div>
+      <div class="settings-status" style="margin-top:4px;">※Groq APIキーはブラウザ側には保存せず、Apps Scriptの「スクリプト プロパティ」（GROQ_API_KEY）に安全に格納されます。</div>
+    </div>
+  </div>
+ 
+  <div class="assist-layout">
+    <div class="card" style="padding:16px;">
+      <h2 style="margin-left:2px;">ノート</h2>
+      <div class="author-row">
+        <label>投稿者名（任意・スプレッドシートのL列に記録されます）</label>
+        <input type="text" id="authorName" placeholder="例）山田太郎（未入力の場合は匿名）">
+      </div>
+      <div class="notepad">
+        <textarea id="userInput" placeholder="例）広報で芦屋の街をこう変えたい！…"></textarea>
+        <button type="button" id="micBtn" class="big-btn ghost" style="margin-top:8px;" onclick="toggleMic()">🎤 音声で入力する</button>
+      </div>
+      <div style="margin-top:14px;">
+        <button class="big-btn" id="runBtn" onclick="runAI()">🔧 AIに相談する</button>
+        <span id="loadingMsg" class="loading" style="display:none;margin-left:10px;">分析中…</span>
+      </div>
+    </div>
+ 
+    <div class="card" style="padding:16px;">
+      <h2 style="margin-left:2px;">整理結果</h2>
+      <div class="report-slip" id="slip"><p class="slip-empty">ここに整理結果が表示されます。</p></div>
+    </div>
+  </div>
+</section>
+ 
+<!-- ================= VOICE BOARD ================= -->
+<section id="tree" class="page">
+  <div class="cork-intro">
+    <h2>📌 声のボード</h2>
+    <p>大分類 → 中分類 → 記事タイトル → 記事内容の順にクリックして開きます。似たテーマの提案は自動的に統合されます。</p>
+  </div>
+  <div id="corkGrid" class="cork-grid"></div>
+  <div id="detailPanel" class="detail-panel"></div>
+</section>
+ 
+</main>
+ 
+<script>
+/* ===================== 連携設定 ===================== */
+// 公開後は、ここに発行したGoogle Apps Script Web AppのURL(.../exec)を直接貼り付けてください。
+// こうしておけば、サイトを訪れた人は誰も設定不要ですぐに使えます（下の設定欄への入力は、
+// このブラウザだけの一時的な動作確認用の上書きです）。
+const GAS_URL_DEFAULT = "https://script.google.com/macros/s/AKfycbyLTOGBHyo6Y3ojZZXmDm-yBO_bT2qd1pACQVBiiRMPr4pHFQFfLfpd1GtWBo-4nZDvVg/exec";
+let gasUrl = GAS_URL_DEFAULT;
+// このサイト（パス）専用のローカル保存キー。ドメインを共有する他サイトへ設定が漏れないようにする。
+const GAS_STORAGE_KEY = 'ashiya_gas_url::' + location.pathname;
+ 
+/* ===================== BASE CATEGORY DEFINITIONS ===================== */
+const OTHER_LABEL = "その他";
+const CATEGORIES = [
+  { key: "BIG-1", icon: "🛡️", label: "防災・防犯", sublabel: "安全で安心なまちづくり",
+    baseSubs: ["安否確認体制", "自主防災訓練", "防犯パトロール", "災害備蓄強化"] },
+  { key: "BIG-2", icon: "🏡", label: "インフラ・環境", sublabel: "住環境の維持と保全",
+    baseSubs: ["急斜面の安全", "道路・側溝整備", "ゴミステーション", "緑化・景観保護"] },
+  { key: "BIG-3", icon: "🤝", label: "コミュニティ", sublabel: "つながりと支え合いの地域",
+    baseSubs: ["世代間交流", "イベント運営", "新住民の歓迎", "班長・役員負担"] },
+  { key: "BIG-4", icon: "🤲", label: "福祉・見守り", sublabel: "誰もが暮らしやすい環境",
+    baseSubs: ["高齢者の孤立", "子育て世代支援", "ペット共生", "健康増進活動"] },
+  { key: "BIG-5", icon: "🚀", label: "将来ビジョン", sublabel: "持続可能な自治会の未来",
+    baseSubs: ["空き家・継承", "自治会のDX", "次世代の担い手", "街の未来像"] },
+];
+
+/* 大分類ごとの固定300字ベースビジョン（アイデアの地図・左側） */
+const AI_BASE_SUMMARY = {
+  "BIG-1": "山手町の防災・防犯は、地域の安全を守るすべての基盤です。自主防災訓練や防犯パトロールを通じて住民同士の顔の見える関係を築き、安否確認体制や災害備蓄を強化します。日頃からの備えと地域一体となった見守りにより、予測不能な災害や犯罪から命と暮らしを守り、誰もが安心して暮らせる強靭なまちの仕組みを作ります。",
+  "BIG-2": "山手町の豊かな住環境と自然景観を守るため、インフラの維持管理を徹底します。急斜面の安全確保や道路・側溝の計画的な整備に加え、ゴミステーションの適切な管理や緑化の保護を通じて、快適な生活空間を次世代に継承します。住民の日常生活に直結する環境課題に真摯に向き合い、美しく安全な街並みをみんなで維持します。",
+  "BIG-3": "山手町のつながりを深めるため、多世代が交流できるコミュニティの場を再構築します。イベントの運営方法を見直し、新しく転入してきた住民も温かく迎え入れられる環境を作ります。さらに、班長や役員の過度な負担を軽減する仕組みを導入することで、誰もが無理なく楽しく参加し、支え合える持続可能な地域コミュニティを育てます。",
+  "BIG-4": "高齢者の孤立防止から子育て世代への温かい支援まで、誰もが取り残されない福祉の環境を整えます。地域全体で日常的な見守りを行い、ペットとの共生ルールを整えながら、住民一人ひとりの心身の健康を増進する活動を推進します。お互いを思いやり、誰もが生きがいを感じて安心して暮らし続けられる優しい福祉のネットワークを構築します。",
+  "BIG-5": "山手町の未来を見据え、空き家の継承問題や自治会のDX化に果敢に挑戦します。変化する時代に対応できる次世代の担い手を育成し、住民一人ひとりのアイデアを反映しながら「これからの山手町」の姿を共に描きます。持続可能な自治会の運営基盤を整え、未来へ発展し続ける希望に満ちた地域社会を創り上げていきます。"
+};
+
+/* 最初の模擬投稿（新統合）。中分類はGASのCATEGORY_MASTERと完全一致させる。 */
+const SEED_IDEAS = [
+  { big:"BIG-1", mid:"安否確認体制", title:"災害時に誰も取り残さない安否の仕組み", summary:"地域内で確実な安否確認ができる体制を構築します。近隣同士の絆や連絡網を日頃から整え、災害時に迅速な救助や支援が行き届く、誰も見捨てないセーフティネットを作ります。" },
+  { big:"BIG-1", mid:"自主防災訓練", title:"実践的で誰もが参加しやすい防災訓練", summary:"形式的な訓練から脱却し、実際の災害を想定した実践的な自主防災訓練を行います。地域住民が協力し合い、いざという時にそれぞれの役割を果たせる防災力を養います。" },
+  { big:"BIG-1", mid:"防犯パトロール", title:"安心して暮らせる街の自主防犯体制", summary:"地域住民による日常的な防犯パトロールを通じて、犯罪の抑止と子ども・高齢者の見守りを行います。目配りと声かけの温かいつながりが、安全で安心な街を守り抜きます。" },
+  { big:"BIG-1", mid:"災害備蓄強化", title:"いざという時の命を守る備蓄の充実", summary:"大規模災害に備えた十分な物資の確保と、効率的な管理・保管体制を整えます。非常時の生活を支える水や食料、救命資機材を地域全体で共有し、万全の備えを築きます。" },
+  { big:"BIG-2", mid:"急斜面の安全", title:"安全な暮らしを守る斜面・インフラ対策", summary:"山手町特有の急斜面や擁壁の安全性を守るため、点検と対策を強化します。専門的な知識や行政との連携を活かし、土砂災害などのリスクから住民の命と生活を守る環境を整備します。" },
+  { big:"BIG-2", mid:"道路・側溝整備", title:"安全で快適な生活道路・側溝の維持", summary:"日々の生活に欠かせない道路や側溝の保守点検・整備を継続的に行います。老朽化や水はけの課題に迅速に対応し、歩行者や車両が安全に通れる快適な生活空間を保ちます。" },
+  { big:"BIG-2", mid:"ゴミステーション", title:"清潔で快適な地域環境とゴミ管理", summary:"地域住民全員で気持ちよく利用できるゴミステーションの管理体制を整えます。適切な分別やマナーの向上、美化活動を通じて、カラス対策や衛生面でのトラブルのない美しい環境を守ります。" },
+  { big:"BIG-2", mid:"緑化・景観保護", title:"豊かな自然と美しい街並みの保全", summary:"山手町の魅力である豊かな緑や美しい景観を次世代へと引き継ぎます。住民みんなで街路樹や庭の緑を守り育て、季節の移り変わりを感じられる心安らぐ美しい住環境を維持します。" },
+  { big:"BIG-3", mid:"世代間交流", title:"多世代が笑顔で集う温かな交流の場", summary:"子どもから高齢者まで、異なる世代が日常的にふれ合える機会をつくります。顔の見える関係を深めることで、お互いを思いやり、誰もが孤立しない温もりのある地域コミュニティを育てます。" },
+  { big:"BIG-3", mid:"イベント運営", title:"みんなで楽しむ地域イベントの創出", summary:"夏祭りや季節の催しなど、住民が主役となって楽しめるイベントを企画・運営します。笑顔あふれる場を共に作り上げるプロセスを通じて、地域の結束と絆を深める活気ある機会を生み出します。" },
+  { big:"BIG-3", mid:"新住民の歓迎", title:"新しい仲間を温かく迎えるウェルカム体制", summary:"山手町に新しく転入してきた住民の方々を温かく迎え入れ、地域に馴染みやすい環境を作ります。スムーズな情報共有と心からの歓迎により、転入の不安を解消し、すぐに地域の一員としてつながれる仕組みを整えます。" },
+  { big:"BIG-3", mid:"班長・役員負担", title:"持続可能な無理のない自治会運営への改革", summary:"特定の個人に負担が集中しがちな班長や役員の役割を見直し、効率化を図ります。デジタルツールの活用や業務の簡素化により、誰もが無理なく楽しく協力できる持続可能な運営体制を実現します。" },
+  { big:"BIG-4", mid:"高齢者の孤立", title:"誰も孤立させない地域見守りネット", summary:"高齢者の方々が住慣れた街で安心して暮らせるよう、日常的な見守り支援を行います。孤立を防ぎ、さりげない声かけや福祉サービスへの橋渡しができる、温かな支え合いのネットワークを構築します。" },
+  { big:"BIG-4", mid:"子育て世代支援", title:"子育て家族が安心して暮らせる環境づくり", summary:"子育て世代が直面する負担を軽減し、地域全体で温かく見守る環境を整えます。親同士が気軽に相談し合えるつながりをつくり、子どもたちが健やかに育つ明るい地域社会を創り上げます。" },
+  { big:"BIG-4", mid:"ペット共生", title:"マナーを守り快適に暮らすペット共生", summary:"ペットを飼う人と飼わない人が互いに尊重し合い、気持ちよく暮らせるルールを整えます。マナーの向上やトラブル防止を通じて、動物とも共生できる優しく調和のとれた地域社会を目指します。" },
+  { big:"BIG-4", mid:"健康増進活動", title:"心身ともに健康で活き活きと暮らす街", summary:"住民の心身の健康維持と増進を目的とした、気軽に参加できる活動や運動の機会を提供します。身体を動かし仲間と笑い合うことで、健康寿命を延ばし、活気あふれる豊かな日常を支えます。" },
+  { big:"BIG-5", mid:"空き家・継承", title:"未来へつなぐ空き家対策と資産の継承", summary:"増加する空き家問題や不動産の継承に関する不安に対し、早期の対策と相談体制を整えます。街の活気を損なわず、次世代へ円滑に住環境を引き継ぐための持続可能な仕組みを考えます。" },
+  { big:"BIG-5", mid:"自治会のDX", title:"テクノロジーを活用した新しい自治会運営", summary:"デジタル技術やプラットフォームを導入し、連絡や意見集約の効率化を進めます。時間や場所を選ばず参加できる新しい自治会の仕組みを整え、現代のライフスタイルに合わせたスマートな地域運営を実現します。" },
+  { big:"BIG-5", mid:"次世代の担い手", title:"未来を託す若い世代の巻き込みと育成", summary:"これからの山手町を支える若い世代や次世代のリーダーを発掘・育成します。若い感性や新しいアイデアを取り入れ、古い慣習にとらわれない、未来へ発展し続ける開かれた組織を築きます。" },
+  { big:"BIG-5", mid:"街の未来像", title:"みんなで描く山手町のありたい姿と将来像", summary:"住民一人ひとりのアイデアや希望を集約し、これからの山手町が目指す方向性を共に描きます。変化する時代に対応しながら、誰もが誇りを持てる未来の街のビジョンを主体的に創り上げていきます。" }
+];
+
+let ideas = [];
+let openCat = null;
+let pendingResult = null;
+
+/* ===================== NAV ===================== */
+function showPage(id, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  if(btn){ btn.classList.add('active'); }
+  else { document.querySelectorAll('nav button').forEach(b=>{ if(b.getAttribute('onclick').includes("'"+id+"'")) b.classList.add('active'); }); }
+  if(id==='tree'){ renderBoard(); }
+  if(id==='home'){ renderMapUpdate(); }
+  if(id==='assist'){ loadGasUrl(); }
+}
+
+/* ===================== 連携URL（このブラウザのみの上書き設定） ===================== */
+function loadGasUrl(){
+  let stored = '';
+  try{ stored = localStorage.getItem(GAS_STORAGE_KEY) || ''; }catch(e){}
+  gasUrl = stored || GAS_URL_DEFAULT;
+  const input = document.getElementById('gasUrlInput');
+  const status = document.getElementById('gasUrlStatus');
+  if(input) input.value = gasUrl;
+  if(status){
+    status.textContent = gasUrl
+      ? "設定済み：AI分析・スプレッドシート記録の両方がこのURL経由で動作します。"
+      : "未設定：AI分析・スプレッドシート記録のどちらも動作しません。";
+  }
+}
+function saveGasUrl(){
+  const input = document.getElementById('gasUrlInput');
+  gasUrl = input.value.trim();
+  try{ localStorage.setItem(GAS_STORAGE_KEY, gasUrl); }catch(e){}
+  document.getElementById('gasUrlStatus').textContent = gasUrl
+    ? "保存しました（このブラウザのみ有効）。全員に自動反映したい場合は、コード内のGAS_URL_DEFAULTにこのURLを直接貼り付けて再公開してください。"
+    : "未設定：AI分析・スプレッドシート記録のどちらも動作しません。";
+}
+
+/* ===================== GAS通信（このサイトのGASは analyze / submit / get / (blend) 方式） ===================== */
+async function gasCall(payload){
+  if(!gasUrl){ throw new Error('連携設定でGoogle Apps ScriptのURLを保存してください。'); }
+  const response = await fetch(gasUrl, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'}, // Apps Script側でのCORSプリフライト回避
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if(data.status !== 'success'){ throw new Error(data.message || 'サーバーとの通信に失敗しました。'); }
+  return data;
+}
+
+/* ===================== データ層：スプレッドシートを唯一の情報源として読み込む ===================== */
+function seedIdeas(){
+  return SEED_IDEAS.map((s,i)=>({
+    id:'seed_'+i, ts: -(SEED_IDEAS.length-i),
+    big:s.big, mid:s.mid, title:s.title, summary:s.summary, raw:s.summary,
+    core:'', change:'', success:'', concern:'', question:'', mergeReason:'',
+    type:'seed', status:'active'
+  }));
+}
+
+function opinionToIdea(o, idx){
+  if(!o || !o.title) return null;
+  const bigDef = CATEGORIES.find(c=>c.label===String(o.bigCatName||'').trim());
+  const midName = String(o.midCatName||'').trim();
+  const statusText = String(o.status||'').trim();
+  const isArchived = statusText === '元記事';
+  const isMerged = statusText === '新統合';
+  return {
+    id:'row_'+idx, ts: idx,
+    big: bigDef ? bigDef.key : 'UNKNOWN',
+    mid: midName,
+    title: o.title, summary: o.summary || '', raw: o.content || '',
+    core:'', change:'', success:'', concern:'', question:'',
+    mergeReason: o.reason || '',
+    type: isMerged ? 'merged' : 'proposal',
+    status: isArchived ? 'archived' : 'active'
+  };
+}
+
+async function fetchSheetIdeas(){
+  if(!gasUrl) return [];
+  try{
+    const sep = gasUrl.includes('?') ? '&' : '?';
+    const res = await fetch(gasUrl + sep + 'action=get');
+    const data = await res.json();
+    if(data.status !== 'success' || !Array.isArray(data.opinions)) return [];
+    return data.opinions.map(opinionToIdea).filter(Boolean);
+  }catch(e){ console.error('sheet fetch failed', e); return []; }
+}
+
+// 常に「模擬投稿(seed)」＋「スプレッドシートの最新内容」を組み合わせて再構築する（＝スプレッドシートが実体）
+async function loadIdeas(){
+  const fromSheet = await fetchSheetIdeas();
+  ideas = [...seedIdeas(), ...fromSheet];
+}
+
+function getSubs(bigKey){
+  const cat = CATEGORIES.find(c=>c.key===bigKey);
+  const subs = cat.baseSubs.map(label=>({label, dynamic:false}));
+  const hasOther = cat.baseSubs.includes(OTHER_LABEL);
+  const strayOther = ideas.some(i=>i.big===bigKey && i.status==='active' && !cat.baseSubs.includes(i.mid));
+  if(!hasOther && strayOther){ subs.push({label:OTHER_LABEL, dynamic:false}); }
+  return subs;
+}
+function ideasForSub(bigKey, sub){
+  const cat = CATEGORIES.find(c=>c.key===bigKey);
+  if(sub.label===OTHER_LABEL && !cat.baseSubs.includes(OTHER_LABEL)){
+    return ideas.filter(i=>i.big===bigKey && i.status==='active' && !cat.baseSubs.includes(i.mid));
+  }
+  return ideas.filter(i=>i.big===bigKey && i.mid===sub.label && i.status==='active');
+}
+function archivedForSub(bigKey, sub){
+  return ideas.filter(i=>i.big===bigKey && i.mid===sub.label && i.status==='archived');
+}
+
+/* ===================== AI: CLASSIFY + 5視点分析（GASのanalyzeアクション） ===================== */
+async function classifyAI(text){
+  const data = await gasCall({ action:'analyze', content:text });
+  const r = data.result || {};
+  return {
+    bigLabel: r['大分類'] || '', midLabel: r['中分類'] || '',
+    title: r['推奨タイトル'] || '', summary200: r['要約200'] || '',
+    core: r['核心'] || '', change: r['変化'] || '', success: r['成功事例'] || '',
+    concern: r['懸念点'] || '', question: r['問い'] || ''
+  };
+}
+
+/* ===================== AI: HOME UPDATE BLEND（GAS側にblendアクションがあれば使用） ===================== */
+async function blendAI(bigKey){
+  const cat = CATEGORIES.find(c=>c.key===bigKey);
+  const base = AI_BASE_SUMMARY[bigKey];
+  const active = ideas.filter(i=>i.big===bigKey && i.status==='active');
+  const citizenText = active.map(a=>`・${a.title}：${a.summary}`).join('\n') || '（まだ市民の声は積み重なっていません）';
+  try{
+    const data = await gasCall({ action:'blend', bigName:cat.label, baseText:base, citizenText });
+    return (data.text||'').trim();
+  }catch(e){
+    throw new Error('この機能を使うには、Apps Scriptに「blend」アクションの追加が必要です（Claudeが提供する追加コードを貼り付けてください）。');
+  }
+}
+
+/* ===================== ASSIST PAGE FLOW ===================== */
+async function runAI(){
+  const text = document.getElementById('userInput').value.trim();
+  if(!text){ alert('内容を入力してください。'); return; }
+  const runBtn = document.getElementById('runBtn');
+  const loading = document.getElementById('loadingMsg');
+  const slip = document.getElementById('slip');
+  runBtn.disabled = true; loading.style.display='inline';
+  slip.innerHTML = '<p class="slip-empty">AIが5つの視点で読み解いています…</p>';
+  await loadIdeas();
+  try{
+    const r = await classifyAI(text);
+    pendingResult = { ...r, raw:text };
+    renderSlip(pendingResult);
+  }catch(err){
+    console.error(err);
+    slip.innerHTML = `<p class="slip-empty">読み取りに失敗しました：${escapeHtml(err.message||String(err))}</p>`;
+  }finally{
+    runBtn.disabled=false; loading.style.display='none';
+  }
+}
+
+function renderSlip(r){
+  const slip = document.getElementById('slip');
+  slip.innerHTML = `
+    <div class="slip-row"><div class="slip-label">推奨タイトル</div><div class="slip-value" style="font-weight:800;">${escapeHtml(r.title||'')}</div></div>
+    <div class="slip-row"><div class="slip-label">要約200</div><div class="slip-value">${escapeHtml(r.summary200||'')}</div></div>
+    <div class="slip-row"><div class="slip-label">分類（大分類 / 中分類）</div><div class="slip-value">
+      <span class="slip-tag">${escapeHtml(r.bigLabel||'')}</span>
+      <span class="slip-tag">${escapeHtml(r.midLabel||'')}</span>
+    </div></div>
+    <div class="slip-row"><div class="slip-label">5つの視点の分析</div>
+      <div class="persp-grid">
+        <div class="persp-box"><div class="pl">核心</div><div class="pv">${escapeHtml(r.core||'')}</div></div>
+        <div class="persp-box"><div class="pl">変化</div><div class="pv">${escapeHtml(r.change||'')}</div></div>
+        <div class="persp-box"><div class="pl">成功事例</div><div class="pv">${escapeHtml(r.success||'')}</div></div>
+        <div class="persp-box"><div class="pl">懸念点</div><div class="pv">${escapeHtml(r.concern||'')}</div></div>
+        <div class="persp-box" style="grid-column:1/3;"><div class="pl">問い</div><div class="pv">${escapeHtml(r.question||'')}</div></div>
+      </div>
+    </div>
+    <p style="font-size:12px;color:#8b8f7f;margin-top:6px;">※この5つの視点の詳細は確認用表示です。スプレッドシートには要約とタイトルのみ保存されます。</p>
+    <div class="confirm-box">
+      <p>この内容でボードに掲示しますか？</p>
+      <div class="btn-row">
+        <button class="big-btn" id="postBtn" onclick="postIdea()">📌 声のボードに投稿する</button>
+        <button class="big-btn ghost" onclick="cancelPost()">✍️ 書き直す</button>
+      </div>
+      <div id="postStatus"></div>
+    </div>
+  `;
+}
+
+async function postIdea(){
+  if(!pendingResult) return;
+  const postBtn = document.getElementById('postBtn');
+  const statusEl = document.getElementById('postStatus');
+  postBtn.disabled = true;
+  statusEl.innerHTML = '<p class="loading" style="margin-top:10px;">送信中…</p>';
+  await loadIdeas();
+
+  const r = pendingResult;
+  const activeInBucket = ideas.filter(i=>i.big && i.mid===r.midLabel && i.status==='active' &&
+    CATEGORIES.find(c=>c.label===r.bigLabel)?.key===i.big);
+  const willLikelyMerge = activeInBucket.length >= 2; // これが投稿されると3件目になる場合
+
+  try{
+    await gasCall({
+      action:'submit',
+      title: r.title, summary: r.summary200, content: r.raw,
+      bigCatName: r.bigLabel, midCatName: r.midLabel
+    });
+    if(willLikelyMerge){
+      statusEl.innerHTML = `<div class="merge-banner">🔗 同じテーマの提案が3件集まったため、AIが自動的に1つの統合案にまとめました。「声のボード」でご確認ください。</div>`;
+    } else {
+      statusEl.innerHTML = `<p class="slip-empty" style="margin-top:10px;">✅ ボードに掲示しました。「声のボード」で確認できます。</p>`;
+    }
+  }catch(e){
+    console.error(e);
+    statusEl.innerHTML = `<p class="slip-empty" style="margin-top:10px;">送信に失敗しました：${escapeHtml(e.message||String(e))}</p>`;
+  }finally{
+    postBtn.disabled = false;
+  }
+  document.getElementById('userInput').value = '';
+  pendingResult = null;
+}
+
+function cancelPost(){
+  document.getElementById('slip').innerHTML = '<p class="slip-empty">ここに整理結果が表示されます。</p>';
+  pendingResult = null;
+}
+
+/* ===================== HOME: MAP + UPDATE BOARDS ===================== */
+async function renderMapUpdate(){
+  await loadIdeas();
+  const wrap = document.getElementById('mapUpdateWrap');
+  wrap.innerHTML = CATEGORIES.map(c=>`
+    <div class="map-row">
+      <div class="map-card">
+        <div class="cat-name">${c.icon} ${c.label}</div>
+        <div class="body-text">${escapeHtml(AI_BASE_SUMMARY[c.key])}</div>
+      </div>
+      <div class="update-card">
+        <div class="head">
+          <span class="lbl">🔄 提案集約・共創アップデート案</span>
+          <button class="update-btn" id="upd-btn-${c.key}" onclick="toggleUpdate('${c.key}')">アップデート</button>
+        </div>
+        <div class="update-placeholder">ボタンを押すと、これまでの市民の声を反映した最新案がここに表示されます。</div>
+        <div class="update-body" id="upd-body-${c.key}"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function toggleUpdate(bigKey){
+  const btn = document.getElementById('upd-btn-'+bigKey);
+  const body = document.getElementById('upd-body-'+bigKey);
+  if(body.classList.contains('show')){
+    body.classList.remove('show'); body.innerHTML='';
+    btn.textContent = 'アップデート'; btn.classList.remove('close');
+    return;
+  }
+  btn.disabled = true;
+  body.classList.add('show');
+  body.innerHTML = '<span class="update-loading">最新の共創案を生成しています…</span>';
+  try{
+    const text = await blendAI(bigKey);
+    body.innerHTML = escapeHtml(text);
+    btn.textContent = '閉じる'; btn.classList.add('close');
+  }catch(e){
+    console.error(e);
+    body.innerHTML = escapeHtml('生成に失敗しました：' + (e.message||String(e)));
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+/* ===================== VOICE BOARD RENDER ===================== */
+async function renderBoard(){
+  await loadIdeas();
+  const grid = document.getElementById('corkGrid');
+  grid.innerHTML = CATEGORIES.map(c=>{
+    const count = ideas.filter(i=>i.big===c.key && i.status==='active').length;
+    return `
+      <div class="pin-card ${openCat===c.key?'open':''}" onclick="toggleCat('${c.key}')">
+        <div class="tape"></div>
+        <div class="ic">${c.icon}</div>
+        <div class="lbl">${c.label}</div>
+        <div class="cnt ${count===0?'zero':''}">${count}件</div>
+      </div>`;
+  }).join('');
+  renderDetail();
+}
+
+function toggleCat(key){ openCat = (openCat===key) ? null : key; renderBoard(); }
+
+function renderDetail(){
+  const panel = document.getElementById('detailPanel');
+  if(!openCat){ panel.style.display='none'; panel.innerHTML=''; return; }
+  const cat = CATEGORIES.find(c=>c.key===openCat);
+  const subs = getSubs(cat.key);
+  panel.style.display='block';
+  panel.innerHTML = `<div class="detail-title">${cat.icon} ${cat.label}｜${cat.sublabel}</div>` +
+    subs.map(s=>{
+      const list = ideasForSub(cat.key, s);
+      const archived = archivedForSub(cat.key, s);
+      return `
+        <div class="sub-block">
+          <div class="sub-head" onclick="toggleSub(event,this)">
+            <span>${escapeHtml(s.label)}</span>
+            <span class="mono" style="font-size:12px;color:#7c8172;">${list.length}件 ▾</span>
+          </div>
+          <div class="sub-body">
+            ${ list.length ? list.map(i=>ideaNoteHtml(i)).join('') : '<div class="empty-note">まだ投稿がありません。</div>' }
+            ${ archived.length ? `
+              <div class="archive-toggle" onclick="event.stopPropagation();this.nextElementSibling.style.display=(this.nextElementSibling.style.display==='block'?'none':'block');">📁 元記事を見る（${archived.length}件）</div>
+              <div class="archive-list">${archived.map(a=>`<div class="archive-item"><div class="at">${escapeHtml(a.title)}</div><div class="as">${escapeHtml(a.summary)}</div>${a.mergeReason?`<div class="as">統合理由：${escapeHtml(a.mergeReason)}</div>`:''}</div>`).join('')}</div>
+            ` : '' }
+          </div>
+        </div>`;
+    }).join('');
+}
+
+function typeBadge(type){
+  if(type==='seed') return '<span class="badge b-seed">新統合</span>';
+  if(type==='merged') return '<span class="badge b-merged">新統合</span>';
+  return '<span class="badge b-proposal">単独提案</span>';
+}
+
+function ideaNoteHtml(i){
+  const safeId = i.id.replace(/[^a-zA-Z0-9_-]/g,'_');
+  return `
+    <div class="idea-note ${i.type==='seed'?'seed':''} ${i.type==='merged'?'merged':''}" onclick="toggleFull(this,'${i.id.replace(/'/g,"\\'")}')">
+      <div class="t">${escapeHtml(i.title)} ${typeBadge(i.type)}</div>
+      <div class="idea-full" id="full-${safeId}"></div>
+    </div>`;
+}
+
+function toggleFull(noteEl, id){
+  const full = noteEl.querySelector('.idea-full');
+  const showing = full.classList.contains('open');
+  if(showing){ full.classList.remove('open'); full.style.display='none'; full.innerHTML=''; return; }
+  const i = ideas.find(x=>x.id===id);
+  if(!i) return;
+  let html = `<div>${escapeHtml(i.summary)}</div>`;
+  if(i.core || i.change || i.success || i.concern || i.question){
+    html += `<div class="persp-grid">
+      <div class="persp-box"><div class="pl">核心</div><div class="pv">${escapeHtml(i.core||'')}</div></div>
+      <div class="persp-box"><div class="pl">変化</div><div class="pv">${escapeHtml(i.change||'')}</div></div>
+      <div class="persp-box"><div class="pl">成功事例</div><div class="pv">${escapeHtml(i.success||'')}</div></div>
+      <div class="persp-box"><div class="pl">懸念点</div><div class="pv">${escapeHtml(i.concern||'')}</div></div>
+      <div class="persp-box" style="grid-column:1/3;"><div class="pl">問い</div><div class="pv">${escapeHtml(i.question||'')}</div></div>
+    </div>`;
+  }
+  if(i.type==='merged' && i.mergeReason){
+    html += `<div class="mreason"><b>統合理由：</b>${escapeHtml(i.mergeReason)}</div>`;
+  }
+  full.innerHTML = html;
+  full.classList.add('open');
+  full.style.display = 'block';
+}
+
+function toggleSub(e, headEl){
+  e.stopPropagation();
+  const body = headEl.nextElementSibling;
+  body.style.display = (body.style.display==='block') ? 'none' : 'block';
+}
+
+function escapeHtml(str){
+  return (str||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+ 
+function toggleSub(e, headEl){
+  e.stopPropagation();
+  const body = headEl.nextElementSibling;
+  body.style.display = (body.style.display==='block') ? 'none' : 'block';
+}
+ 
+function escapeHtml(str){
+  return (str||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+ 
+/* ===================== INIT ===================== */
+(async function init(){
+  loadGasUrl();
+  await loadIdeas();
+  renderMapUpdate();
+})();
+/* ▼音声入力機能（追加） */
+let micRecognition = null;
+let micActive = false;
+function toggleMic(){
+  const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SpeechRecognitionCtor){
+    alert('お使いのブラウザは音声入力に対応していません（Google Chromeでお試しください）。');
+    return;
+  }
+  const btn = document.getElementById('micBtn');
+  if(micActive){
+    if(micRecognition) micRecognition.stop();
+    return;
+  }
+  micRecognition = new SpeechRecognitionCtor();
+  micRecognition.lang = 'ja-JP';
+  micRecognition.continuous = true;
+  micRecognition.interimResults = false;
+  micRecognition.onstart = () => { micActive = true; if(btn) btn.textContent = '⏹ 音声入力を停止'; };
+  micRecognition.onend = () => { micActive = false; if(btn) btn.textContent = '🎤 音声で入力する'; };
+  micRecognition.onerror = (e) => { console.error('mic error', e); micActive = false; if(btn) btn.textContent = '🎤 音声で入力する'; };
+  micRecognition.onresult = (event) => {
+    let finalText = '';
+    for(let i = event.resultIndex; i < event.results.length; i++){
+      if(event.results[i].isFinal){ finalText += event.results[i][0].transcript; }
+    }
+    if(finalText){
+      const ta = document.getElementById('userInput');
+      if(ta){ ta.value = (ta.value ? ta.value + ' ' : '') + finalText; }
+    }
+  };
+  micRecognition.start();
+}
+/* ▲音声入力機能ここまで */
+  
+</script>
+</body>
+</html>
