@@ -574,7 +574,7 @@ async function createNewTheme(){
   btn.disabled=false;
 }
 
-(async function init(){ await loadIdeas(); renderMapUpdate();})();
+(async function init(){ await loadIdeas(); renderMapUpdate(); showPage('home', document.querySelector('nav button'));})();
 </script>
 </body>
 </html>
