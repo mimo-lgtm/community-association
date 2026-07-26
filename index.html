@@ -111,10 +111,10 @@ textarea:focus{outline:none;}
 .slip-label{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--teal-deep);letter-spacing:.05em;margin-bottom:4px;}
 .slip-value{font-size:14px;line-height:1.7;}
 .slip-tag{display:inline-block;background:var(--paper-2);border:1px solid var(--line-light);border-radius:999px;padding:3px 12px;font-size:12.5px;font-weight:700;color:var(--teal-deep);margin-right:6px;}
-.persp-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;}
-.persp-box{background:var(--paper-2);border-radius:6px;padding:8px 10px;}
-.persp-box .pl{font-size:10.5px;font-weight:700;color:var(--violet-deep);margin-bottom:2px;}
-.persp-box .pv{font-size:12px;color:#3a3f33;line-height:1.6;}
+.persp-grid{display:flex;flex-direction:column;gap:10px;margin-top:10px;}
+.persp-box{background:var(--paper-2);border-radius:8px;padding:12px 14px;border-left:4px solid var(--teal);}
+.persp-box .pl{font-size:11px;font-weight:800;color:var(--violet-deep);margin-bottom:4px;letter-spacing:.05em;}
+.persp-box .pv{font-size:13.5px;color:#2b2f27;line-height:1.8;}
 .confirm-box{margin-top:16px;padding-top:14px;border-top:1.5px dashed var(--line-light);}
 .confirm-box p{font-weight:700;margin-bottom:10px;font-size:14px;}
 .btn-row{display:flex;gap:10px;flex-wrap:wrap;}
@@ -177,8 +177,7 @@ textarea:focus{outline:none;}
 <header class="topbar">
   <div class="brand"><span class="dot"></span><div><span class="city">ASHIYA CITY / YAMATECHO</span><span class="town">芦屋市 山手町</span></div></div>
   <nav>
-    <a class="official-link" href="https://mimo-lgtm.github.io/ashiya-issues/" target="_blank" rel="noopener">🏙 芦屋市の課題</a>
-    <a class="official-link" href="https://sites.google.com/view/yamatechoasiya-city/%E3%83%9B%E3%83%BC%E3%83%A0" target="_blank" style="border-color:#d8dcc9;color:#d8dcc9;">🏠 公式サイト</a>
+    <a class="official-link" href="https://sites.google.com/view/yamatechoasiya-city/%E3%83%9B%E3%83%BC%E3%83%A0" target="_blank" rel="noopener">🏠 公式サイト</a>
     <button class="active" onclick="showPage('home',this)">ホーム</button>
     <button onclick="showPage('assist',this)">声を届ける</button>
     <button onclick="showPage('tree',this)">声のボード</button>
@@ -205,30 +204,25 @@ textarea:focus{outline:none;}
       </g>
     </svg>
     <div class="sticky"><span class="small-city">ASHIYA / YAMATECHO</span>芦屋市 山手町<br>声とアイデアのプラットフォーム</div>
-    <p class="hero-sub"><b>芦屋市 山手町町内会</b> 公式プラットフォーム。山手町、そして芦屋の街への想い、ちょっとした気づき——そのまま書き込むだけでOK。あとはAIが読み取って、5つのテーマにきれいに整理してくれます。</p>
+    <p class="hero-sub"><b>芦屋市 山手町自治会</b> 公式プラットフォーム。山手町、そして芦屋の街への想い、ちょっとした気づき——そのまま書き込むだけでOK。あとはAIが読み取って、5つのテーマにきれいに整理してくれます。</p>
     <div class="hero-cta-row">
       <button class="big-btn amber" onclick="showPage('assist')">✍ さっそく声を届けてみる</button>
-      <a class="official-link" style="color:#e8a33d;border-color:#e8a33d;" href="https://sites.google.com/view/yamatechoasiya-city/%E3%83%9B%E3%83%BC%E3%83%A0" target="_blank">🏠 山手町 公式サイト（お知らせ・活動）</a>
+      <a class="official-link" style="color:#e8a33d;border-color:#e8a33d;" href="https://sites.google.com/view/yamatechoasiya-city/%E3%83%9B%E3%83%BC%E3%83%A0" target="_blank" rel="noopener">🏠 山手町 公式サイト（お知らせ・活動）</a>
       <div class="hero-tag">みんなの声 → AI整理 → 政策提案ボード</div>
     </div>
   </div>
 
   <div class="entrance-row">
+    <div class="entrance-card dark">
+      <h3>🏠 芦屋市 山手町 公式サイト</h3>
+      <p>清掃活動・防犯パトロール・行事など、町内会の最新のお知らせは公式サイトでご確認ください。</p>
+      <a class="btn" href="https://sites.google.com/view/yamatechoasiya-city/%E3%83%9B%E3%83%BC%E3%83%A0" target="_blank" rel="noopener">公式サイトを開く →</a>
+    </div>
     <div class="entrance-card light">
       <h3>💬 声のボード（このプラットフォーム）</h3>
       <p><b>芦屋市 山手町</b>への気づきを自由に書くだけ。AIが5テーマに整理。匿名・無料・音声入力🎙️対応。</p>
       <a class="btn" href="#map" onclick="document.getElementById('mapUpdateWrap').scrollIntoView({behavior:'smooth'})">ボードを見る ↓</a>
     </div>
-    <div class="entrance-card dark">
-      <h3>🏙 芦屋市の課題（サブ）</h3>
-      <p>メインは町内会のサイトで町内の課題はそこで意見。町内で解決できないことは芦屋市全体の課題として意見する、サブの位置づけです。</p>
-      <a class="btn" href="https://mimo-lgtm.github.io/ashiya-issues/" target="_blank" rel="noopener">芦屋市の課題を開く →</a>
-    </div>
-  </div>
-
-  <div class="card" style="background:#fffbeb;border:1.5px solid var(--amber);">
-    <h3 style="margin:0 0 8px 0;color:var(--ink);">📌 使い方の案内</h3>
-    <p style="font-size:13.5px;line-height:1.8;margin:0;">① まずは <b>山手町の声</b> をこのボードで投稿 → ② 町内だけで解決できないことは <b>芦屋市の課題</b> ボタンから市全体のハブへ → ③ 広報・人口・教育・未来・駅前施設などテーマ別に意見を届けられます。すべて別ウィンドウで開くので戻るのが簡単です。</p>
   </div>
 
   <div class="section-lead"><h2>🗺 5つのテーマ｜地図とアップデート</h2><span class="tag">BASE VISION × LIVE UPDATE</span></div>
@@ -279,7 +273,6 @@ textarea:focus{outline:none;}
 </section>
 <section id="tree" class="page">
   <div class="cork-intro"><h2>📌 芦屋市 山手町 - 声のボード</h2><p>大分類 → 中分類 → 記事タイトル → 記事内容の順にクリックして開きます。似たテーマの提案は自動的に統合されます。</p></div>
-  <div id="postNotify" style="display:none;background:#e8a33d;color:#1b1f1d;padding:14px 18px;border-radius:8px;margin-bottom:16px;font-weight:800;font-size:14px;"></div>
   <div id="corkGrid" class="cork-grid"></div>
   <div id="detailPanel" class="detail-panel"></div>
 </section>
@@ -338,7 +331,22 @@ function archivedForSub(bigKey, sub){ return ideas.filter(i=>i.big===bigKey && i
 async function classifyAI(text){ const data = await gasCall({action:'analyze', content:text}); const r = data.result||{}; return {bigLabel:r['大分類']||'', midLabel:r['中分類']||'', title:r['推奨タイトル']||'', summary200:r['要約200']||'', core:r['核心']||'', change:r['変化']||'', success:r['成功事例']||'', concern:r['懸念点']||'', question:r['問い']||''};}
 async function blendAI(bigKey){ const cat = CATEGORIES.find(c=>c.key===bigKey); const base = AI_BASE_SUMMARY[bigKey]; const active = ideas.filter(i=>i.big===bigKey && i.status==='active'); const citizenText = active.map(a=>`・${a.title}：${a.summary}`).join('\n') || '（まだ市民の声は積み重なっていません）'; try{ const data = await gasCall({action:'blend', bigName:cat.label, baseText:base, citizenText}); return (data.text||'').trim();}catch(e){throw new Error('blend機能はGAS側の追加が必要です');}}
 async function runAI(){ const text = document.getElementById('userInput').value.trim(); if(!text){alert('内容を入力してください');return;} const runBtn=document.getElementById('runBtn'); const loading=document.getElementById('loadingMsg'); const slip=document.getElementById('slip'); runBtn.disabled=true; loading.style.display='inline'; slip.innerHTML='<p class="slip-empty">AIが5つの視点で読み解いています…</p>'; await loadIdeas(); try{ const r=await classifyAI(text); pendingResult={...r, raw:text}; renderSlip(pendingResult);}catch(err){slip.innerHTML=`<p class="slip-empty">失敗：${escapeHtml(err.message||String(err))}</p>`;}finally{runBtn.disabled=false; loading.style.display='none';}}
-function renderSlip(r){ const slip=document.getElementById('slip'); slip.innerHTML=`<div class="slip-row"><div class="slip-label">推奨タイトル</div><div class="slip-value" style="font-weight:800;">${escapeHtml(r.title||'')}</div></div><div class="slip-row"><div class="slip-label">要約200</div><div class="slip-value">${escapeHtml(r.summary200||'')}</div></div><div class="slip-row"><div class="slip-label">分類</div><div class="slip-value"><span class="slip-tag">${escapeHtml(r.bigLabel||'')}</span><span class="slip-tag">${escapeHtml(r.midLabel||'')}</span></div></div><div class="slip-row"><div class="slip-label">5つの視点</div><div class="persp-grid"><div class="persp-box"><div class="pl">核心</div><div class="pv">${escapeHtml(r.core||'')}</div></div><div class="persp-box"><div class="pl">変化</div><div class="pv">${escapeHtml(r.change||'')}</div></div><div class="persp-box"><div class="pl">成功事例</div><div class="pv">${escapeHtml(r.success||'')}</div></div><div class="persp-box"><div class="pl">懸念点</div><div class="pv">${escapeHtml(r.concern||'')}</div></div><div class="persp-box" style="grid-column:1/3;"><div class="pl">問い</div><div class="pv">${escapeHtml(r.question||'')}</div></div></div></div><div class="confirm-box"><p>この内容でボードに掲示しますか？</p><div class="btn-row"><button class="big-btn" id="postBtn" onclick="postIdea()">📌 投稿する</button><button class="big-btn ghost" onclick="cancelPost()">書き直す</button></div><div id="postStatus"></div></div>`;}
+function renderSlip(r){
+  const slip=document.getElementById('slip');
+  slip.innerHTML=`<div class="slip-row"><div class="slip-label">推奨タイトル</div><div class="slip-value" style="font-weight:800;">${escapeHtml(r.title||'')}</div></div>
+  <div class="slip-row"><div class="slip-label">要約200</div><div class="slip-value">${escapeHtml(r.summary200||'')}</div></div>
+  <div class="slip-row"><div class="slip-label">分類</div><div class="slip-value"><span class="slip-tag">${escapeHtml(r.bigLabel||'')}</span><span class="slip-tag">${escapeHtml(r.midLabel||'')}</span></div></div>
+  <div class="slip-row"><div class="slip-label">5つの視点（縦並び）</div>
+    <div class="persp-grid">
+      <div class="persp-box"><div class="pl">① 核心</div><div class="pv">${escapeHtml(r.core||'')}</div></div>
+      <div class="persp-box"><div class="pl">② 変化</div><div class="pv">${escapeHtml(r.change||'')}</div></div>
+      <div class="persp-box"><div class="pl">③ 成功事例</div><div class="pv">${escapeHtml(r.success||'')}</div></div>
+      <div class="persp-box"><div class="pl">④ 懸念点</div><div class="pv">${escapeHtml(r.concern||'')}</div></div>
+      <div class="persp-box"><div class="pl">⑤ 問い</div><div class="pv">${escapeHtml(r.question||'')}</div></div>
+    </div>
+  </div>
+  <div class="confirm-box"><p>この内容でボードに掲示しますか？</p><div class="btn-row"><button class="big-btn" id="postBtn" onclick="postIdea()">📌 投稿する</button><button class="big-btn ghost" onclick="cancelPost()">書き直す</button></div><div id="postStatus"></div></div>`;
+}
 async function postIdea(){
   if(!pendingResult) return;
   const postBtn=document.getElementById('postBtn');
@@ -346,13 +354,17 @@ async function postIdea(){
   postBtn.disabled=true;
   statusEl.innerHTML='<p class="loading" style="margin-top:10px;">送信中…</p>';
   const r=pendingResult;
+  const author = (document.getElementById('authorName')?.value || '').trim();
   try{
-    await gasCall({action:'submit', title:r.title, summary:r.summary200, content:r.raw, bigCatName:r.bigLabel, midCatName:r.midLabel});
+    await gasCall({action:'submit', title:r.title, summary:r.summary200, content:r.raw, bigCatName:r.bigLabel, midCatName:r.midLabel, author: author || '匿名'});
     const msg = `あなたの投稿は ${r.bigLabel} の ${r.midLabel} に格納されました。`;
     document.getElementById('userInput').value='';
+    if(document.getElementById('authorName')) document.getElementById('authorName').value='';
     pendingResult=null;
     await loadIdeas();
-    showPage('tree', document.querySelector('nav button:nth-child(3)'));
+    // ボードへ遷移
+    const boardBtn = document.querySelector('nav button:nth-child(3)');
+    showPage('tree', boardBtn);
     const cat = CATEGORIES.find(c=>c.label===r.bigLabel);
     if(cat) openCat = cat.key;
     renderBoard();
@@ -361,10 +373,10 @@ async function postIdea(){
       notify.textContent = '✅ ' + msg;
       notify.style.display='block';
       notify.scrollIntoView({behavior:'smooth', block:'center'});
-      setTimeout(()=>{ notify.style.display='none'; }, 8000);
+      setTimeout(()=>{ notify.style.display='none'; }, 9000);
     }
   }catch(e){
-    statusEl.innerHTML='失敗：'+escapeHtml(e.message);
+    statusEl.innerHTML='失敗：'+escapeHtml(e.message||String(e));
   }finally{
     postBtn.disabled=false;
   }
