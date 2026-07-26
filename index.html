@@ -440,7 +440,7 @@ async function loadIdeas(){
   }
 }
 
-function getSubs(bigKey){ const cat = getAllCategories().find(c=>c.key===bigKey); if(!cat) return []; const subs = (cat.baseSubs||[]).map(label=>({label, dynamic:false})); return subs;}
+function getSubs(bigKey){ if(!bigKey || String(bigKey).startsWith('UNKNOWN')) return []; const cat = getAllCategories().find(c=>c.key===bigKey); if(!cat) return []; const subs = (cat.baseSubs||[]).map(label=>({label, dynamic:false})); return subs;}
 function ideasForSub(bigKey, sub){ return ideas.filter(i=>i.big===bigKey && i.mid===sub.label && i.status==='active');}
 function archivedForSub(bigKey, sub){ return ideas.filter(i=>i.big===bigKey && i.mid===sub.label && i.status==='archived');}
 async function classifyAI(text){
@@ -502,9 +502,42 @@ async function postIdea(){
   }
 }
 function cancelPost(){ document.getElementById('slip').innerHTML='<p class="slip-empty">ここに整理結果が表示されます。</p>'; pendingResult=null;}
-async function renderMapUpdate(){ await loadIdeas(); const wrap=document.getElementById('mapUpdateWrap'); wrap.innerHTML=getCategories().map(c=>`<div class="map-row"><div class="map-card"><div class="cat-name">${c.icon} ${c.label}</div><div class="body-text">${escapeHtml(AI_BASE_SUMMARY[c.key])}</div></div><div class="update-card"><div class="head"><span class="lbl">🔄 共創アップデート</span><button class="update-btn" id="upd-btn-${c.key}" onclick="toggleUpdate('${c.key}')">アップデート</button></div><div class="update-placeholder">ボタンを押すと最新の共創案が表示されます。</div><div class="update-body" id="upd-body-${c.key}"></div></div></div>`).join('');}
+async function renderMapUpdate(){
+  await loadIdeas();
+  const wrap=document.getElementById('mapUpdateWrap');
+  // ホームでは5つの基本分類だけ表示（カスタムはボードのみ）
+  const baseOnly = BASE_CATEGORIES;
+  wrap.innerHTML=baseOnly.map(c=>`<div class="map-row"><div class="map-card"><div class="cat-name">${c.icon} ${c.label}</div><div class="body-text">${escapeHtml(AI_BASE_SUMMARY[c.key] || AI_BASE_SUMMARY_BASE[c.key] || '')}</div></div><div class="update-card"><div class="head"><span class="lbl">🔄 共創アップデート</span><button class="update-btn" id="upd-btn-${c.key}" onclick="toggleUpdate('${c.key}')">アップデート</button></div><div class="update-placeholder">ボタンを押すと最新の共創案が表示されます。</div><div class="update-body" id="upd-body-${c.key}"></div></div></div>`).join('');
+}
 async function toggleUpdate(bigKey){ const btn=document.getElementById('upd-btn-'+bigKey); const body=document.getElementById('upd-body-'+bigKey); if(body.classList.contains('show')){body.classList.remove('show'); body.innerHTML=''; btn.textContent='アップデート'; btn.classList.remove('close'); return;} btn.disabled=true; body.classList.add('show'); body.innerHTML='<span class="update-loading">生成中…</span>'; try{ const text=await blendAI(bigKey); body.innerHTML=escapeHtml(text); btn.textContent='閉じる'; btn.classList.add('close');}catch(e){body.innerHTML='失敗：'+escapeHtml(e.message);}finally{btn.disabled=false;}}
-async function renderBoard(){ await loadIdeas(); const grid=document.getElementById('corkGrid'); grid.innerHTML=getCategories().map(c=>{ const count=ideas.filter(i=>i.big===c.key && i.status==='active').length; return `<div class="pin-card ${openCat===c.key?'open':''}" onclick="toggleCat('${c.key}')"><div class="tape"></div><div class="ic">${c.icon}</div><div class="lbl">${c.label}</div><div class="cnt ${count===0?'zero':''}">${count}件</div></div>`;}).join(''); renderDetail();}
+async function renderBoard(){
+  await loadIdeas();
+  const grid=document.getElementById('corkGrid');
+  // UNKNOWNや空キーは除外
+  const cats = getAllCategories().filter(c=>c.key && !c.key.startsWith('UNKNOWN'));
+  const baseCats = cats.filter(c=>BASE_CATEGORIES.some(b=>b.key===c.key));
+  const customCats = cats.filter(c=>!BASE_CATEGORIES.some(b=>b.key===c.key));
+  const baseHtml = baseCats.map(c=>{
+    const count=ideas.filter(i=>i.big===c.key && i.status==='active').length;
+    return `<div class="pin-card ${openCat===c.key?'open':''}" onclick="toggleCat('${c.key}')"><div class="tape"></div><div class="ic">${c.icon}</div><div class="lbl">${c.label}</div><div class="cnt ${count===0?'zero':''}">${count}件</div></div>`;
+  }).join('');
+  const customHtml = customCats.length ? `<div style="grid-column:1/-1;margin:12px 0 4px 0;font-size:12px;font-weight:800;color:var(--teal-deep);">住民発案のテーマ</div>` + customCats.map(c=>{
+    const count=ideas.filter(i=>i.big===c.key && i.status==='active').length;
+    return `<div class="pin-card ${openCat===c.key?'open':''}" onclick="toggleCat('${c.key}')" style="border-color:var(--amber);"><div class="tape" style="background:rgba(232,163,61,.8)"></div><div class="ic">${c.icon}</div><div class="lbl">${c.label}<span class="custom-badge">住民発案</span></div><div class="cnt ${count===0?'zero':''}">${count}件</div></div>`;
+  }).join('') : '';
+  const unknownIdeas = ideas.filter(i=>String(i.big).startsWith('UNKNOWN'));
+  const unknownHtml = unknownIdeas.length ? `<div style="grid-column:1/-1;margin-top:10px;padding:10px;background:#fff3cd;border-radius:6px;font-size:12px;">未分類: ${unknownIdeas.length}件（分類名の不一致）<button onclick="cleanupUnknownCategories()" style="margin-left:10px;padding:2px 8px;border-radius:4px;border:1px solid #ccc;">整理</button></div>` : '';
+  grid.innerHTML = baseHtml + customHtml + unknownHtml;
+  renderDetail();
+}
+function cleanupUnknownCategories(){
+  if(!confirm('未分類を一旦クリアして再読み込みしますか？')) return;
+  const customs = loadCustomCategories().filter(c=>!c.key.startsWith('UNKNOWN') && !c.label.startsWith('UNKNOWN'));
+  saveCustomCategories(customs);
+  localStorage.removeItem(CUSTOM_KEY+'_unknown');
+  location.reload();
+}
+
 function toggleCat(key){ openCat=(openCat===key)?null:key; renderBoard();}
 function renderDetail(){ const panel=document.getElementById('detailPanel'); if(!openCat){panel.style.display='none'; panel.innerHTML=''; return;} const cat=getAllCategories().find(c=>c.key===openCat); const subs=getSubs(cat.key); panel.style.display='block'; panel.innerHTML=`<div class="detail-title">${cat.icon} ${cat.label}｜${cat.sublabel}</div>`+subs.map(s=>{ const list=ideasForSub(cat.key,s); const archived=archivedForSub(cat.key,s); return `<div class="sub-block"><div class="sub-head" onclick="toggleSub(event,this)"><span>${escapeHtml(s.label)}</span><span class="mono" style="font-size:12px;color:#7c8172;">${list.length}件 ▾</span></div><div class="sub-body">${list.length?list.map(i=>ideaNoteHtml(i)).join(''):'<div class="empty-note">まだ投稿がありません。</div>'}${archived.length?`<div class="archive-toggle" onclick="event.stopPropagation();this.nextElementSibling.style.display=(this.nextElementSibling.style.display==='block'?'none':'block');">📁 元記事を見る（${archived.length}件）</div><div class="archive-list">${archived.map(a=>`<div class="archive-item"><div class="at">${escapeHtml(a.title)}</div><div class="as">${escapeHtml(a.summary)}</div></div>`).join('')}</div>`:''}</div></div>`;}).join('');}
 function ideaNoteHtml(i){ const safeId=i.id.replace(/[^a-zA-Z0-9_-]/g,'_'); return `<div class="idea-note ${i.type==='seed'?'seed':''} ${i.type==='merged'?'merged':''}" onclick="toggleFull(this,'${i.id.replace(/'/g,"\'")}')"><div class="t">${escapeHtml(i.title)} ${typeBadge(i.type)}</div><div class="idea-full" id="full-${safeId}"></div></div>`;}
@@ -574,7 +607,7 @@ async function createNewTheme(){
   btn.disabled=false;
 }
 
-(async function init(){ await loadIdeas(); renderMapUpdate(); showPage('home', document.querySelector('nav button'));})();
+(async function init(){ await loadIdeas(); renderMapUpdate();})();
 </script>
 </body>
 </html>
