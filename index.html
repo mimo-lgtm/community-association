@@ -386,21 +386,69 @@ let ideas = []; let openCat = null; let pendingResult = null;
 function showPage(id, btn){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active')); if(btn) btn.classList.add('active'); if(id==='tree') renderBoard(); if(id==='home') renderMapUpdate();}
 async function gasCall(payload){ const response = await fetch(gasUrl, {method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)}); const data = await response.json(); if(data.status !== 'success') throw new Error(data.message || 'サーバーとの通信に失敗しました。'); return data;}
 function seedIdeas(){ return SEED_IDEAS.map((s,i)=>({id:'seed_'+i, ts:-(SEED_IDEAS.length-i), big:s.big, mid:s.mid, title:s.title, summary:s.summary, raw:s.summary, core:'', change:'', success:'', concern:'', question:'', mergeReason:'', type:'seed', status:'active'}));}
-function opinionToIdea(o, idx){ if(!o || !o.title) return null; const bigDef = getCategories().find(c=>c.label===String(o.bigCatName||'').trim()); const midName = String(o.midCatName||'').trim(); const statusText = String(o.status||'').trim(); const isArchived = statusText === '元記事'; const isMerged = statusText === '新統合'; return {id:'row_'+idx, ts:idx, big:bigDef?bigDef.key:'UNKNOWN', mid:midName, title:o.title, summary:o.summary||'', raw:o.content||'', core:'', change:'', success:'', concern:'', question:'', mergeReason:o.reason||'', type:isMerged?'merged':'proposal', status:isArchived?'archived':'active'};}
+function opinionToIdea(o, idx){
+  if(!o || !o.title) return null;
+  const bigName = String(o.bigCatName||'').trim();
+  const midName = String(o.midCatName||'').trim();
+  let bigDef = getAllCategories().find(c=>c.label===bigName);
+  // もしシートに知らない大分類名があれば、その場でカスタムカテゴリとして自動登録
+  if(!bigDef && bigName){
+    const existing = loadCustomCategories();
+    if(!existing.some(c=>c.label===bigName)){
+      const newKey = 'BIG-AUTO-' + bigName.replace(/\s+/g,'_').slice(0,20) + '-' + Date.now();
+      const autoCat = { key:newKey, icon:'✨', label:bigName, sublabel:'シートから自動復元', baseSubs:[midName || 'その他'], isCustom:true, auto:true };
+      existing.push(autoCat);
+      saveCustomCategories(existing);
+      // サマリーも保存
+      CUSTOM_SUMMARIES[newKey] = bigName + 'に関するテーマです。';
+      saveCustomSummaries(CUSTOM_SUMMARIES);
+      console.log('Auto-created category from sheet:', bigName);
+    }
+    bigDef = getAllCategories().find(c=>c.label===bigName);
+  }
+  const statusText = String(o.status||'').trim();
+  const isArchived = statusText === '元記事';
+  const isMerged = statusText === '新統合';
+  return {id:'row_'+idx, ts:idx, big:bigDef?bigDef.key:('UNKNOWN_'+bigName), mid:midName, title:o.title, summary:o.summary||'', raw:o.content||'', core:'', change:'', success:'', concern:'', question:'', mergeReason:o.reason||'', type:isMerged?'merged':'proposal', status:isArchived?'archived':'active', bigLabel:bigName } ;
+}
 async function fetchSheetIdeas(){ if(!gasUrl) return []; try{ const sep = gasUrl.includes('?')?'&':'?'; const res = await fetch(gasUrl+sep+'action=get'); const data = await res.json(); if(data.status!=='success'||!Array.isArray(data.opinions)) return []; return data.opinions.map(opinionToIdea).filter(Boolean);}catch(e){return [];}}
 async function loadIdeas(){
-  // 最新のカスタムカテゴリを反映
-  const allCats = getAllCategories();
-  // グローバルCATEGORIESを更新（後方互換）
+  // まず既存カスタムを読み込み
+  let allCats = getAllCategories();
   window.CATEGORIES = allCats;
-  const fromSheet = await fetchSheetIdeas();
+  // シートから取得（この中で未知の大分類があれば自動作成される）
+  let fromSheet = await fetchSheetIdeas();
+  // 自動作成があったかもしれないので再読み込み
+  allCats = getAllCategories();
+  window.CATEGORIES = allCats;
+  // 2回目：自動作成後に再マッピング（UNKNOWNを解消）
+  if(fromSheet.some(i=> String(i.big).startsWith('UNKNOWN'))){
+    fromSheet = await fetchSheetIdeas();
+    allCats = getAllCategories();
+    window.CATEGORIES = allCats;
+  }
   ideas = [...seedIdeas(), ...fromSheet];
+  // デバッグ：カスタムカテゴリに中分類が足りない場合、シートの中分類を追加
+  for(const idea of fromSheet){
+    const cat = getAllCategories().find(c=>c.key===idea.big);
+    if(cat && idea.mid && !cat.baseSubs.includes(idea.mid)){
+      cat.baseSubs.push(idea.mid);
+      const customs = loadCustomCategories();
+      const idx = customs.findIndex(c=>c.key===cat.key);
+      if(idx>=0){ customs[idx]=cat; saveCustomCategories(customs); }
+    }
+  }
 }
 
-function getSubs(bigKey){ const cat = getCategories().find(c=>c.key===bigKey); const subs = cat.baseSubs.map(label=>({label, dynamic:false})); return subs;}
+function getSubs(bigKey){ const cat = getAllCategories().find(c=>c.key===bigKey); if(!cat) return []; const subs = (cat.baseSubs||[]).map(label=>({label, dynamic:false})); return subs;}
 function ideasForSub(bigKey, sub){ return ideas.filter(i=>i.big===bigKey && i.mid===sub.label && i.status==='active');}
 function archivedForSub(bigKey, sub){ return ideas.filter(i=>i.big===bigKey && i.mid===sub.label && i.status==='archived');}
-async function classifyAI(text){ const data = await gasCall({action:'analyze', content:text}); const r = data.result||{}; return {bigLabel:r['大分類']||'', midLabel:r['中分類']||'', title:r['推奨タイトル']||'', summary200:r['要約200']||'', core:r['核心']||'', change:r['変化']||'', success:r['成功事例']||'', concern:r['懸念点']||'', question:r['問い']||''};}
+async function classifyAI(text){
+  const custom = getAllCategories().map(c=>({label:c.label, subs:c.baseSubs}));
+  const data = await gasCall({action:'analyze', content:text, customCategories: custom});
+  const r = data.result||{};
+  return {bigLabel:r['大分類']||'', midLabel:r['中分類']||'', title:r['推奨タイトル']||'', summary200:r['要約200']||'', core:r['核心']||'', change:r['変化']||'', success:r['成功事例']||'', concern:r['懸念点']||'', question:r['問い']||''};
+}
 async function blendAI(bigKey){ const cat = getCategories().find(c=>c.key===bigKey); const base = AI_BASE_SUMMARY[bigKey]; const active = ideas.filter(i=>i.big===bigKey && i.status==='active'); const citizenText = active.map(a=>`・${a.title}：${a.summary}`).join('\n') || '（まだ市民の声は積み重なっていません）'; try{ const data = await gasCall({action:'blend', bigName:cat.label, baseText:base, citizenText}); return (data.text||'').trim();}catch(e){throw new Error('blend機能はGAS側の追加が必要です');}}
 async function runAI(){ const text = document.getElementById('userInput').value.trim(); if(!text){alert('内容を入力してください');return;} const runBtn=document.getElementById('runBtn'); const loading=document.getElementById('loadingMsg'); const slip=document.getElementById('slip'); runBtn.disabled=true; loading.style.display='inline'; slip.innerHTML='<p class="slip-empty">AIが5つの視点で読み解いています…</p>'; await loadIdeas(); try{ const r=await classifyAI(text); pendingResult={...r, raw:text}; renderSlip(pendingResult);}catch(err){slip.innerHTML=`<p class="slip-empty">失敗：${escapeHtml(err.message||String(err))}</p>`;}finally{runBtn.disabled=false; loading.style.display='none';}}
 function renderSlip(r){
