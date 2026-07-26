@@ -177,7 +177,8 @@ textarea:focus{outline:none;}
 <header class="topbar">
   <div class="brand"><span class="dot"></span><div><span class="city">ASHIYA CITY / YAMATECHO</span><span class="town">芦屋市 山手町</span></div></div>
   <nav>
-    <a class="official-link" href="https://sites.google.com/view/yamatechoasiya-city/%E3%83%9B%E3%83%BC%E3%83%A0" target="_blank" rel="noopener">🏠 公式サイト</a>
+    <a class="official-link" href="https://mimo-lgtm.github.io/ashiya-issues/" target="_blank" rel="noopener">🏙 芦屋市の課題</a>
+    <a class="official-link" href="https://sites.google.com/view/yamatechoasiya-city/%E3%83%9B%E3%83%BC%E3%83%A0" target="_blank" rel="noopener" style="border-color:#d8dcc9;color:#d8dcc9;">🏠 公式サイト</a>
     <button class="active" onclick="showPage('home',this)">ホーム</button>
     <button onclick="showPage('assist',this)">声を届ける</button>
     <button onclick="showPage('tree',this)">声のボード</button>
@@ -213,16 +214,21 @@ textarea:focus{outline:none;}
   </div>
 
   <div class="entrance-row">
-    <div class="entrance-card dark">
-      <h3>🏠 芦屋市 山手町 公式サイト</h3>
-      <p>清掃活動・防犯パトロール・行事など、町内会の最新のお知らせは公式サイトでご確認ください。</p>
-      <a class="btn" href="https://sites.google.com/view/yamatechoasiya-city/%E3%83%9B%E3%83%BC%E3%83%A0" target="_blank" rel="noopener">公式サイトを開く →</a>
-    </div>
     <div class="entrance-card light">
       <h3>💬 声のボード（このプラットフォーム）</h3>
       <p><b>芦屋市 山手町</b>への気づきを自由に書くだけ。AIが5テーマに整理。匿名・無料・音声入力🎙️対応。</p>
       <a class="btn" href="#map" onclick="document.getElementById('mapUpdateWrap').scrollIntoView({behavior:'smooth'})">ボードを見る ↓</a>
     </div>
+    <div class="entrance-card dark">
+      <h3>🏙 芦屋市の課題（サブ）</h3>
+      <p>メインは町内会のサイトで町内の課題はそこで意見。町内で解決できないことは芦屋市全体の課題として意見する、サブの位置づけです。</p>
+      <a class="btn" href="https://mimo-lgtm.github.io/ashiya-issues/" target="_blank" rel="noopener">芦屋市の課題を開く →</a>
+    </div>
+  </div>
+
+  <div class="card" style="background:#fffbeb;border:1.5px solid var(--amber);">
+    <h3 style="margin:0 0 8px 0;color:var(--ink);">📌 使い方の案内</h3>
+    <p style="font-size:13.5px;line-height:1.8;margin:0;">① まずは <b>山手町の声</b> をこのボードで投稿 → ② 町内だけで解決できないことは <b>芦屋市の課題</b> ボタンから市全体のハブへ → ③ 広報・人口・教育・未来・駅前施設などテーマ別に意見を届けられます。すべて別ウィンドウで開くので戻るのが簡単です。</p>
   </div>
 
   <div class="section-lead"><h2>🗺 5つのテーマ｜地図とアップデート</h2><span class="tag">BASE VISION × LIVE UPDATE</span></div>
@@ -273,6 +279,7 @@ textarea:focus{outline:none;}
 </section>
 <section id="tree" class="page">
   <div class="cork-intro"><h2>📌 芦屋市 山手町 - 声のボード</h2><p>大分類 → 中分類 → 記事タイトル → 記事内容の順にクリックして開きます。似たテーマの提案は自動的に統合されます。</p></div>
+  <div id="postNotify" style="display:none;background:#e8a33d;color:#1b1f1d;padding:14px 18px;border-radius:8px;margin-bottom:16px;font-weight:800;font-size:14px;"></div>
   <div id="corkGrid" class="cork-grid"></div>
   <div id="detailPanel" class="detail-panel"></div>
 </section>
