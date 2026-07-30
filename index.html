@@ -216,54 +216,44 @@ textarea:focus{outline:none;}
       </g>
     </svg>
     <div class="sticky"><span class="small-city">ASHIYA / YAMATECHO</span>芦屋市 山手町<br>声とアイデアのプラットフォーム</div>
-    <p class="hero-sub"><b>芦屋市 山手町町内会</b> 公式プラットフォーム。山手町、そして芦屋の街への想い、ちょっとした気づき——そのまま書き込むだけでOK。音声入力もできます。あとはAIが読み取って、5つのテーマにきれいに整理してくれます。</p>
+    <p class="hero-sub"><b>芦屋市 山手町町内会</b> 公式プラットフォーム。山手町、そして芦屋の街への想い、ちょっとした気づき——そのまま書き込むだけでOK。あとはAIが読み取って、5つのテーマにきれいに整理してくれます。</p>
     <div class="hero-cta-row">
-      <button class="big-btn amber" onclick="showPage('assist')">✍ さっそく声を届けてみる</button>
+      <button class="big-btn amber" onclick="showPage('assist', document.querySelector('nav button:nth-child(3)'))">✍ さっそく声を届けてみる</button>
       <a class="official-link" style="color:#e8a33d;border-color:#e8a33d;" href="https://sites.google.com/view/yamatechoasiya-city/%E3%83%9B%E3%83%BC%E3%83%A0" target="_blank" rel="noopener">🏠 山手町 公式サイト（お知らせ・活動）</a>
       <div class="hero-tag">みんなの声 → AI整理 → 政策提案ボード</div>
     </div>
   </div>
 
-  <div class="entrance-row">
-    <div class="entrance-card light">
-      <h3>💬 声のボード（このプラットフォーム）</h3>
-      <p><b>芦屋市 山手町</b>への気づきを自由に書くだけ。AIが5テーマに整理。匿名・無料・音声入力🎙️対応。</p>
-      <a class="btn" href="#map" onclick="document.getElementById('mapUpdateWrap').scrollIntoView({behavior:'smooth'})">ボードを見る ↓</a>
+  <div class="card" style="background:#fff;border:2px solid var(--amber);">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+      <h2 style="margin:0;">📌 使い方｜1分で分かる</h2>
+      <span class="tag" style="font-family:'JetBrains Mono',monospace;font-size:11px;border:1px solid var(--teal);padding:2px 8px;border-radius:999px;">匿名・無料・音声入力🎙対応</span>
     </div>
-    <div class="entrance-card dark">
-      <h3>🏙 芦屋市の課題（サブ）</h3>
-      <p>メインは町内会のサイトで町内の課題はそこで意見。町内で解決できないことは芦屋市全体の課題として意見する、サブの位置づけです。</p>
-      <a class="btn" href="https://mimo-lgtm.github.io/ashiya-issues/" target="_blank" rel="noopener">芦屋市の課題を開く →</a>
+    <div class="flow3">
+      <div class="flow-step"><div class="num">STEP 01</div><div class="ic">✍</div><h4>自由に書く又は音声入力</h4><p>形式は不要。思ったことをそのまま</p></div>
+      <div class="flow-step"><div class="num">STEP 02</div><div class="ic">🤖</div><h4>AIが整理</h4><p>5つの視点・要約・タイトル・テーマを自動生成。</p></div>
+      <div class="flow-step"><div class="num">STEP 03</div><div class="ic">📌</div><h4>ボードに掲示</h4><p>同じテーマは自動統合。履歴も保存されます。</p></div>
     </div>
-  </div>
-
-  <div class="card" style="background:#fffbeb;border:1.5px solid var(--amber);">
-    <h3 style="margin:0 0 8px 0;color:var(--ink);">📌 使い方の案内</h3>
-    <p style="font-size:13.5px;line-height:1.8;margin:0;">① まずは <b>山手町の声</b> をこのボードで投稿 → ② 町内だけで解決できないことは <b>芦屋市の課題</b> ボタンから市全体のハブへ → ③ 広報・人口・教育・未来・駅前施設などテーマ別に意見を届けられます。すべて別ウィンドウで開くので戻るのが簡単です。</p>
+    <div style="margin-top:16px;padding:12px 14px;background:var(--paper-2);border-radius:8px;font-size:13px;line-height:1.8;">
+      <b>💬 声のボード：</b>山手町への気づきは5テーマに自動整理されます。<br>
+      <b>🏙 芦屋市の課題：</b>町内で解決できないことは市全体のハブへ（広報・人口・教育・未来・駅前施設など）。別ウィンドウで開くので戻るのが簡単です。<br>
+      <span style="font-size:11.5px;color:#7c8172;">※ボードの初期投稿はたたき台の模擬投稿です。実際の声が増えると統合・更新されます。</span>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="big-btn amber" onclick="showPage('assist', document.querySelector('nav button:nth-child(3)'))">✍ 声を届けてみる</button>
+      <button class="big-btn ghost" onclick="showPage('tree', document.querySelector('nav button:nth-child(4)'))">📌 声のボードを見る</button>
+      <a class="official-link" style="border-color:var(--board);color:var(--board);" href="https://mimo-lgtm.github.io/ashiya-issues/" target="_blank" rel="noopener">🏙 芦屋市の課題を開く →</a>
+    </div>
   </div>
 
   <div class="section-lead"><h2>🗺 5つのテーマ｜地図とアップデート</h2><span class="tag">BASE VISION × LIVE UPDATE</span></div>
-  <p style="margin-bottom:14px;font-size:13.5px;color:#5a5f52;">左側は最初から変わらない「未来提案の原点」、右側はボタンを押すとその時点の市民の声を反映した最新のアップデート案がその場に表示されます（もう一度押すと閉じます）。</p>
-  <div id="mapUpdateWrap"></div><div style="margin:14px 0 22px 0;"><button class="add-theme-btn" onclick="openAddThemeModal()">＋ 住民発案の新テーマを追加</button></div>
-  <div class="card">
-    <h2>使い方は3ステップ</h2>
-    <div class="flow3">
-      <div class="flow-step"><div class="num">STEP 01</div><div class="ic">✍</div><h4>自由に書く</h4><p>形式は不要。感じたことをそのまま。</p></div>
-      <div class="flow-step"><div class="num">STEP 02</div><div class="ic">🤖</div><h4>AIが整理する</h4><p>5つの視点・要約・タイトル・テーマを自動生成。</p></div>
-      <div class="flow-step"><div class="num">STEP 03</div><div class="ic">📌</div><h4>ボードに掲示</h4><p>同じテーマの声はリアルタイムに統合されます。</p></div>
-    </div>
+  <p style="margin-bottom:14px;font-size:13.5px;color:#5a5f52;">左は変わらない「未来提案の原点」、右は市民の声を反映した最新のアップデート案（ボタンを押すと表示）です。</p>
+  <div id="mapUpdateWrap"></div>
+  <div style="margin:10px 0 22px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    <button class="add-theme-btn" onclick="openAddThemeModal()">＋ 住民発案の新テーマを追加</button>
+    <span style="font-size:11px;color:#7c8172;">住民の希望で大分類を増やせます。AIが中分類4つを自動作成</span>
   </div>
-  <div class="card">
-    <h2>できること</h2>
-    <ul class="feature-list">
-      <li><b>①</b> 思いついたまま自由記述できる（設問なし）</li>
-      <li><b>②</b> AIが「核心・変化・成功事例・懸念点・問い」の5視点で分析</li>
-      <li><b>③</b> 5つのテーマ×中分類でボードに自動分類（その他が3件たまると新しい中分類が自動生成）</li>
-      <li><b>④</b> 似たテーマの提案は既存の統合記事とリアルタイムに統合され、元の記事は履歴として保存されます</li>
-    </ul>
-    <div class="note-box">ボードの初期投稿の一部は、たたき台としての模擬投稿（新統合）です。実際の声が集まるにつれて統合・更新されていきます。</div>
-    <div style="margin-top:18px;"><button class="big-btn amber" onclick="showPage('assist')">🤖 声を届けてみる</button></div>
-  </div>
+
 </section>
 <section id="assist" class="page">
   <h1>🤖 声を届ける - 芦屋市 山手町</h1>
@@ -279,7 +269,7 @@ textarea:focus{outline:none;}
     <div class="card" style="padding:16px;">
       <h2 style="margin-left:2px;">ノート</h2>
       <div class="author-row"><label>投稿者名（任意）</label><input type="text" id="authorName" placeholder="例）山田太郎（未入力の場合は匿名）"></div>
-      <div class="notepad"><textarea id="userInput" placeholder="例）広報で芦屋の街をこう変えたい！…"></textarea><button type="button" id="micBtn" class="big-btn ghost" style="margin-top:8px;" onclick="toggleMic()">🎤 音声で入力する</button></div>
+      <div class="notepad"><textarea id="userInput" placeholder="例）山手長、芦屋の街をこう変えたい！…"></textarea><button type="button" id="micBtn" class="big-btn ghost" style="margin-top:8px;" onclick="toggleMic()">🎤 音声で入力する</button></div>
       <div style="margin-top:14px;"><button class="big-btn" id="runBtn" onclick="runAI()">🔧 AIに相談する</button><span id="loadingMsg" class="loading" style="display:none;margin-left:10px;">分析中…</span></div>
     </div>
     <div class="card" style="padding:16px;">
@@ -383,7 +373,18 @@ const SEED_IDEAS = [
   { big:"BIG-5", mid:"街の未来像", title:"みんなで描く山手町のありたい姿と将来像", summary:"住民一人ひとりのアイデアや希望を集約し、これからの山手町が目指す方向性を共に描きます。" }
 ];
 let ideas = []; let openCat = null; let pendingResult = null;
-function showPage(id, btn){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active')); if(btn) btn.classList.add('active'); if(id==='tree') renderBoard(); if(id==='home') renderMapUpdate();}
+function showPage(id, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const target = document.getElementById(id);
+  if(target) target.classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(id==='tree') renderBoard();
+  if(id==='home') renderMapUpdate();
+  // スマホで下が表示されてしまう問題を修正：常にページトップへスクロール
+  window.scrollTo({top:0, behavior:'auto'});
+  setTimeout(()=>{ window.scrollTo({top:0, behavior:'auto'}); if(target) target.scrollIntoView({behavior:'auto', block:'start'}); }, 50);
+}
 async function gasCall(payload){ const response = await fetch(gasUrl, {method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)}); const data = await response.json(); if(data.status !== 'success') throw new Error(data.message || 'サーバーとの通信に失敗しました。'); return data;}
 function seedIdeas(){ return SEED_IDEAS.map((s,i)=>({id:'seed_'+i, ts:-(SEED_IDEAS.length-i), big:s.big, mid:s.mid, title:s.title, summary:s.summary, raw:s.summary, core:'', change:'', success:'', concern:'', question:'', mergeReason:'', type:'seed', status:'active'}));}
 function opinionToIdea(o, idx){
