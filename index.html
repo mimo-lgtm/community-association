@@ -216,7 +216,7 @@ textarea:focus{outline:none;}
       </g>
     </svg>
     <div class="sticky"><span class="small-city">ASHIYA / YAMATECHO</span>芦屋市 山手町<br>声とアイデアのプラットフォーム</div>
-    <p class="hero-sub"><b>芦屋市 山手町町内会</b> 公式プラットフォーム。山手町、そして芦屋の街への想い、ちょっとした気づき——そのまま書き込むだけでOK。あとはAIが読み取って、5つのテーマにきれいに整理してくれます。</p>
+    <p class="hero-sub"><b>芦屋市 山手町自治会</b> 公式プラットフォーム。山手町、そして芦屋の街への想い、ちょっとした気づき——そのまま書き込むだけでOK。あとはAIが読み取って、5つのテーマにきれいに整理してくれます。</p>
     <div class="hero-cta-row">
       <button class="big-btn amber" onclick="showPage('assist', document.querySelector('nav button:nth-child(3)'))">✍ さっそく声を届けてみる</button>
       <a class="official-link" style="color:#e8a33d;border-color:#e8a33d;" href="https://sites.google.com/view/yamatechoasiya-city/%E3%83%9B%E3%83%BC%E3%83%A0" target="_blank" rel="noopener">🏠 山手町 公式サイト（お知らせ・活動）</a>
@@ -230,7 +230,7 @@ textarea:focus{outline:none;}
       <span class="tag" style="font-family:'JetBrains Mono',monospace;font-size:11px;border:1px solid var(--teal);padding:2px 8px;border-radius:999px;">匿名・無料・音声入力🎙対応</span>
     </div>
     <div class="flow3">
-      <div class="flow-step"><div class="num">STEP 01</div><div class="ic">✍</div><h4>自由に書く又は音声入力</h4><p>形式は不要。思ったことをそのまま</p></div>
+      <div class="flow-step"><div class="num">STEP 01</div><div class="ic">✍</div><h4>自由に書く</h4><p>形式は不要。思ったことをそのまま書くだけ。</p></div>
       <div class="flow-step"><div class="num">STEP 02</div><div class="ic">🤖</div><h4>AIが整理</h4><p>5つの視点・要約・タイトル・テーマを自動生成。</p></div>
       <div class="flow-step"><div class="num">STEP 03</div><div class="ic">📌</div><h4>ボードに掲示</h4><p>同じテーマは自動統合。履歴も保存されます。</p></div>
     </div>
@@ -269,7 +269,7 @@ textarea:focus{outline:none;}
     <div class="card" style="padding:16px;">
       <h2 style="margin-left:2px;">ノート</h2>
       <div class="author-row"><label>投稿者名（任意）</label><input type="text" id="authorName" placeholder="例）山田太郎（未入力の場合は匿名）"></div>
-      <div class="notepad"><textarea id="userInput" placeholder="例）山手長、芦屋の街をこう変えたい！…"></textarea><button type="button" id="micBtn" class="big-btn ghost" style="margin-top:8px;" onclick="toggleMic()">🎤 音声で入力する</button></div>
+      <div class="notepad"><textarea id="userInput" placeholder="例）広報で芦屋の街をこう変えたい！…"></textarea><button type="button" id="micBtn" class="big-btn ghost" style="margin-top:8px;" onclick="toggleMic()">🎤 音声で入力する</button></div>
       <div style="margin-top:14px;"><button class="big-btn" id="runBtn" onclick="runAI()">🔧 AIに相談する</button><span id="loadingMsg" class="loading" style="display:none;margin-left:10px;">分析中…</span></div>
     </div>
     <div class="card" style="padding:16px;">
@@ -315,12 +315,24 @@ const BASE_CATEGORIES = [
 ];
 const CUSTOM_KEY = 'yamatecho_custom_categories_v1';
 const CUSTOM_SUMMARY_KEY = 'yamatecho_custom_summaries_v1';
+let REMOTE_CUSTOM_CATEGORIES = [];
+let REMOTE_LOADED = false;
+
 function loadCustomCategories(){
   try{
     const raw = localStorage.getItem(CUSTOM_KEY);
     if(!raw) return [];
-    return JSON.parse(raw);
-  }catch(e){ return []; }
+    const local = JSON.parse(raw);
+    // リモートとローカルをマージ（重複除外）
+    if(REMOTE_LOADED && REMOTE_CUSTOM_CATEGORIES.length>0){
+      const merged = [...REMOTE_CUSTOM_CATEGORIES];
+      for(const lc of local){
+        if(!merged.some(c=>c.label===lc.label)) merged.push(lc);
+      }
+      return merged;
+    }
+    return local;
+  }catch(e){ return REMOTE_CUSTOM_CATEGORIES || []; }
 }
 function loadCustomSummaries(){
   try{
@@ -336,8 +348,38 @@ function saveCustomSummaries(map){
   localStorage.setItem(CUSTOM_SUMMARY_KEY, JSON.stringify(map));
 }
 function getAllCategories(){
-  return [...BASE_CATEGORIES, ...loadCustomCategories()];
+  const customs = REMOTE_LOADED ? [...REMOTE_CUSTOM_CATEGORIES, ...loadCustomCategories().filter(c=>!REMOTE_CUSTOM_CATEGORIES.some(r=>r.label===c.label))] : loadCustomCategories();
+  // 重複除去（labelで）
+  const seen=new Set();
+  const uniq=[];
+  for(const c of [...BASE_CATEGORIES, ...customs]){
+    if(!seen.has(c.label)){ seen.add(c.label); uniq.push(c); }
+  }
+  return uniq;
 }
+async function fetchRemoteCustomCategories(){
+  try{
+    const sep = gasUrl.includes('?')?'&':'?';
+    const res = await fetch(gasUrl+sep+'action=getCustomCategories');
+    const data = await res.json();
+    if(data.status==='success' && Array.isArray(data.customCategories)){
+      REMOTE_CUSTOM_CATEGORIES = data.customCategories;
+      REMOTE_LOADED = true;
+      // ローカルにもキャッシュ
+      return REMOTE_CUSTOM_CATEGORIES;
+    }
+  }catch(e){ console.log('remote custom fetch failed', e); }
+  // fallback: getから取得
+  try{
+    const data = await gasCall({action:'get'});
+    if(data.customCategories) {
+      REMOTE_CUSTOM_CATEGORIES = data.customCategories;
+      REMOTE_LOADED = true;
+    }
+  }catch(e){}
+  return REMOTE_CUSTOM_CATEGORIES;
+}
+
 const CATEGORIES = getAllCategories(); // 後方互換用、実際は getAllCategories() を使う
 function getCategories(){ return getAllCategories(); }
 let CUSTOM_SUMMARIES = loadCustomSummaries();
@@ -413,7 +455,7 @@ function opinionToIdea(o, idx){
   return {id:'row_'+idx, ts:idx, big:bigDef?bigDef.key:('UNKNOWN_'+bigName), mid:midName, title:o.title, summary:o.summary||'', raw:o.content||'', core:'', change:'', success:'', concern:'', question:'', mergeReason:o.reason||'', type:isMerged?'merged':'proposal', status:isArchived?'archived':'active', bigLabel:bigName } ;
 }
 async function fetchSheetIdeas(){ if(!gasUrl) return []; try{ const sep = gasUrl.includes('?')?'&':'?'; const res = await fetch(gasUrl+sep+'action=get'); const data = await res.json(); if(data.status!=='success'||!Array.isArray(data.opinions)) return []; return data.opinions.map(opinionToIdea).filter(Boolean);}catch(e){return [];}}
-async function loadIdeas(){
+async function loadIdeas(){ if(!REMOTE_LOADED) await fetchRemoteCustomCategories();
   // まず既存カスタムを読み込み
   let allCats = getAllCategories();
   window.CATEGORIES = allCats;
@@ -597,12 +639,13 @@ function renderDetail(){
   panel.style.display='block';
   panel.innerHTML=`<div class="detail-title">${cat.icon} ${cat.label}｜${cat.sublabel} ${isCustom?'<span class="custom-badge">住民発案</span>':''} ${isCustom?'<button class="big-btn ghost" style="float:right;padding:4px 10px;font-size:11px;" onclick="deleteCustomTheme(\''+cat.key+'\')">削除</button>':''}</div>`+ (isCustom?`<div style="margin-bottom:10px;"><button class="big-btn ghost" style="padding:6px 12px;font-size:12px;" onclick="openCat='${CUSTOM_FOLDER_KEY}';renderBoard();">← 住民発案一覧に戻る</button></div>`:'') + subs.map(s=>{ const list=ideasForSub(cat.key,s); const archived=archivedForSub(cat.key,s); return `<div class="sub-block"><div class="sub-head" onclick="toggleSub(event,this)"><span>${escapeHtml(s.label)}</span><span class="mono" style="font-size:12px;color:#7c8172;">${list.length}件 ▾</span></div><div class="sub-body">${list.length?list.map(i=>ideaNoteHtml(i)).join(''):'<div class="empty-note">まだ投稿がありません。</div>'}${archived.length?`<div class="archive-toggle" onclick="event.stopPropagation();this.nextElementSibling.style.display=(this.nextElementSibling.style.display==='block'?'none':'block');">📁 元記事を見る（${archived.length}件）</div><div class="archive-list">${archived.map(a=>`<div class="archive-item"><div class="at">${escapeHtml(a.title)}</div><div class="as">${escapeHtml(a.summary)}</div></div>`).join('')}</div>`:''}</div></div>`;}).join('');
 }
-function deleteCustomTheme(key){
+async function deleteCustomTheme(key){
   if(!confirm('この住民発案テーマを削除しますか？（投稿は残りますが未分類になります）')) return;
   const customs = loadCustomCategories().filter(c=>c.key!==key);
   saveCustomCategories(customs);
   delete CUSTOM_SUMMARIES[key];
   saveCustomSummaries(CUSTOM_SUMMARIES);
+  try{ await gasCall({action:'deleteCustomCategory', key:key}); await fetchRemoteCustomCategories(); }catch(e){}
   openCat = CUSTOM_FOLDER_KEY;
   renderBoard();
 }
@@ -652,12 +695,22 @@ async function createNewTheme(){
     }catch(e){}
   }
   const newKey = 'BIG-CUSTOM-' + Date.now();
-  const newCat = { key:newKey, icon:icon, label:name, sublabel:desc || '住民発案のテーマ', baseSubs: subs, isCustom:true };
+  const newCat = { key:newKey, icon:icon, label:name, sublabel:desc || '住民発案のテーマ', baseSubs: subs, isCustom:true, author: (document.getElementById('authorName')?.value||'匿名') };
+  // 1. ローカル保存（即時反映）
   const customs = loadCustomCategories();
   customs.push(newCat);
   saveCustomCategories(customs);
   CUSTOM_SUMMARIES[newKey] = desc || `${name}について、住民みんなでアイデアを持ち寄り、解決策を考えていくテーマです。`;
   saveCustomSummaries(CUSTOM_SUMMARIES);
+  // 2. GASに永続保存（highSchool方式：全員に共有）
+  try{
+    await gasCall({action:'addCustomCategory', category: newCat});
+    // リモート再取得
+    await fetchRemoteCustomCategories();
+  }catch(e){
+    console.log('GAS保存失敗、ローカルのみ', e);
+    status.textContent += '（ローカル保存：管理者にGASのカテゴリ一覧シート確認を依頼してください）';
+  }
   status.textContent=`✅ 「${name}」を作成しました。中分類：${subs.join(' / ')}`;
   // 少し待って閉じてボードへ
   setTimeout(()=>{
@@ -674,30 +727,7 @@ async function createNewTheme(){
   btn.disabled=false;
 }
 
-(async function init(){ await loadIdeas(); renderMapUpdate();})();
+(async function init(){ await fetchRemoteCustomCategories(); await loadIdeas(); renderMapUpdate(); showPage('home', document.querySelector('nav button'));})();
 </script>
-<!-- Code for Ashiya 運営主体表示 - 全サイト共通 -->
-<footer style="margin-top:60px;background:#23282a;color:#eef0e4;padding:28px 20px;border-top:4px solid #e8a33d;">
-  <div style="max-width:1120px;margin:0 auto;">
-    <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;">
-      <div style="font-size:28px;">🏙</div>
-      <div>
-        <div style="font-weight:800;font-size:15px;letter-spacing:.04em;margin-bottom:6px;">
-          運営：Code for Ashiya <span style="font-weight:400;font-size:11px;opacity:.7;border:1px solid #e8a33d;color:#e8a33d;padding:2px 8px;border-radius:999px;margin-left:8px;">Civic Tech</span>
-        </div>
-        <p style="font-size:12.5px;line-height:1.9;color:#c7cdbb;margin:0;max-width:720px;">
-          Code for Ashiya は、芦屋の課題をテクノロジーの力で解決する市民によるシビックテックコミュニティです。
-          特定の政党・企業・団体に属さず、<b style="color:#fff;">中立性・公平性・公共性・透明性</b>を原則に、
-          誰もが参加できるオープンな活動を行っています。収集した声は個人が特定されない形で集約し、まちづくりに活かされます。
-          <br>
-          <a href="https://github.com/mimo-lgtm" target="_blank" rel="noopener" style="color:#e8a33d;text-decoration:underline;">GitHubで活動を見る</a>
-          <span style="opacity:.5;margin:0 6px;">/</span>
-          本サイトは住民の声を可視化する非公式の実験的プラットフォームであり、芦屋市・自治会の公式見解ではありません。
-        </p>
-      </div>
-    </div>
-  </div>
-</footer>
-  
 </body>
 </html>
