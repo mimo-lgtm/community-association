@@ -626,7 +626,7 @@ function toggleCustomInside(key){
   renderBoard();
 }
 
-function cleanupUnknownCategories(){function cleanupUnknownCategories(){
+function cleanupUnknownCategories(){
   if(!confirm('未分類を一旦クリアして再読み込みしますか？')) return;
   const customs = loadCustomCategories().filter(c=>!c.key.startsWith('UNKNOWN') && !c.label.startsWith('UNKNOWN'));
   saveCustomCategories(customs);
@@ -634,7 +634,7 @@ function cleanupUnknownCategories(){function cleanupUnknownCategories(){
   location.reload();
 }
 
-function toggleCat(key){ if(typeof renderDetail_old==='function'){ /* legacy no-op */ } 
+function toggleCat(key){
   if(openCat===key){ openCat=null; }
   else { openCat=key; }
   // フォルダを開いた時は中をすぐ見せる
@@ -643,9 +643,11 @@ function toggleCat(key){ if(typeof renderDetail_old==='function'){ /* legacy no-
   }
   renderBoard();
 }
-function openCustomTheme(key){
+async function openCustomTheme(key){
   openCat = key;
+  await loadIdeas();
   renderBoard();
+  setTimeout(()=>{ const p=document.getElementById('detailPanel'); if(p) p.scrollIntoView({behavior:'smooth'}); const b=document.getElementById('custom-body-'+key); if(b) b.scrollIntoView({behavior:'smooth', block:'start'}); }, 100);
 }
 function renderDetail_old(){
   const panel=document.getElementById('detailPanel');
@@ -751,7 +753,32 @@ async function createNewTheme(){
   const btn = document.getElementById('createThemeBtn');
   if(!name){ alert('テーマ名を入力してください'); return; }
   if(getAllCategories().some(c=>c.label===name)){ alert('同名のテーマが既にあります'); return; }
-  btn.disabled=true; status.textContent='🤖 AIが中分類を考えています…（数秒かかります）';
+  btn.disabled=true;
+  status.textContent='🤖 既存の5分類に入るかチェックしています…';
+  const keywordMap = [
+    {kw:['防災','防犯','地震','火災','避難','パトロール'], label:'防災・防犯'},
+    {kw:['道路','側溝','斜面','ゴミ','環境','景観','緑','清掃'], label:'インフラ・環境'},
+    {kw:['交流','イベント','祭り','新住民','班長','役員','自治会'], label:'コミュニティ'},
+    {kw:['福祉','見守り','高齢','子育て','ペット','健康','孤立'], label:'福祉・見守り'},
+    {kw:['空き家','DX','担い手','未来','将来','ビジョン'], label:'将来ビジョン'}
+  ];
+  for(const m of keywordMap){
+    if(m.kw.some(k=>name.includes(k) || desc.includes(k))){
+      status.innerHTML=`⚠️ 「${escapeHtml(name)}」は既存の <b>${m.label}</b> に含まれます。<br>新テーマを作らず投稿してください。「あなたの投稿は ${m.label} に格納されました」と表示されます。<br><br><button class='big-btn ghost' onclick='closeAddThemeModal();showPage("assist", document.querySelector("nav button:nth-child(3)"))'>声を届ける</button>`;
+      btn.disabled=false; return;
+    }
+  }
+  try{
+    const check = await gasCall({action:'analyze', content: `テーマ名：${name} 説明：${desc}`, customCategories: BASE_CATEGORIES.map(c=>({label:c.label, subs:c.baseSubs}))});
+    const r = check.result||check;
+    const bigLabel = r['大分類']||'';
+    if(BASE_CATEGORIES.some(b=>b.label===bigLabel || bigLabel.includes(b.label))){
+      const matched = BASE_CATEGORIES.find(b=>b.label===bigLabel || bigLabel.includes(b.label)) || {label:bigLabel};
+      status.innerHTML=`💡 AI判定：<b>${escapeHtml(matched.label)}</b> に分類されます。新テーマは不要です。<br><br><button class='big-btn ghost' onclick='closeAddThemeModal();showPage("assist", document.querySelector("nav button:nth-child(3)"))'>声を届ける</button>`;
+      btn.disabled=false; return;
+    }
+  }catch(e){}
+  status.textContent='🤖 AIが中分類を考えています…';
   let subs = [];
   try{
     // GAS側に generateTheme アクションがあれば使う、なければフォールバック
