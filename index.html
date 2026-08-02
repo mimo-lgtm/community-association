@@ -182,6 +182,9 @@ textarea:focus{outline:none;}
 .modal .btn-row{display:flex;gap:10px;justify-content:flex-end;margin-top:8px;}
 .custom-badge{font-size:10px;background:var(--amber);color:var(--ink);border-radius:999px;padding:1px 8px;margin-left:6px;font-weight:800;}
 
+
+.accordion-enter{animation:accordionOpen .2s ease;}
+@keyframes accordionOpen{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -216,7 +219,7 @@ textarea:focus{outline:none;}
       </g>
     </svg>
     <div class="sticky"><span class="small-city">ASHIYA / YAMATECHO</span>芦屋市 山手町<br>声とアイデアのプラットフォーム</div>
-    <p class="hero-sub"><b>芦屋市 山手町自治会</b> 公式プラットフォーム。山手町、そして芦屋の街への想い、ちょっとした気づき——そのまま書き込むだけでOK。あとはAIが読み取って、5つのテーマにきれいに整理してくれます。</p>
+    <p class="hero-sub"><b>芦屋市 山手町町内会</b> 公式プラットフォーム。山手町、そして芦屋の街への想い、ちょっとした気づき——そのまま書き込むだけでOK。あとはAIが読み取って、5つのテーマにきれいに整理してくれます。</p>
     <div class="hero-cta-row">
       <button class="big-btn amber" onclick="showPage('assist', document.querySelector('nav button:nth-child(3)'))">✍ さっそく声を届けてみる</button>
       <a class="official-link" style="color:#e8a33d;border-color:#e8a33d;" href="https://sites.google.com/view/yamatechoasiya-city/%E3%83%9B%E3%83%BC%E3%83%A0" target="_blank" rel="noopener">🏠 山手町 公式サイト（お知らせ・活動）</a>
@@ -236,7 +239,7 @@ textarea:focus{outline:none;}
     </div>
     <div style="margin-top:16px;padding:12px 14px;background:var(--paper-2);border-radius:8px;font-size:13px;line-height:1.8;">
       <b>💬 声のボード：</b>山手町への気づきは5テーマに自動整理されます。<br>
-      <b>🏙 芦屋市の課題：</b>町内で解決できないことは市全体のハブへ（広報・人口・教育・未来・駅前施設など）。別ウィンドウで開くので戻るのが簡単です。<br>
+      <b>🏙 芦屋市の課題：</b>町内で解決できないことは市全体のハブへ（広報・人口・教育・未来・幼児教育、駅前施設など）。別ウィンドウで開くので戻るのが簡単です。<br>
       <span style="font-size:11.5px;color:#7c8172;">※ボードの初期投稿はたたき台の模擬投稿です。実際の声が増えると統合・更新されます。</span>
     </div>
     <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
@@ -606,29 +609,38 @@ function renderDetail(){
   const panel=document.getElementById('detailPanel');
   if(!openCat){panel.style.display='none'; panel.innerHTML=''; return;}
 
-  // 住民発案フォルダの中身を表示
+  // 住民発案フォルダの中身をアコーディオン式で表示（スペース節約）
   if(openCat===CUSTOM_FOLDER_KEY){
     const customCats = getAllCategories().filter(c=>!BASE_CATEGORIES.some(b=>b.key===c.key) && !c.key.startsWith('UNKNOWN'));
     panel.style.display='block';
     if(customCats.length===0){
-      panel.innerHTML=`<div class="detail-title">📁 住民発案のテーマ</div><div class="empty-note" style="padding:14px;">まだ住民発案のテーマはありません。「＋ 新しいテーマを立ち上げる」から作成してください。</div>`;
+      panel.innerHTML=`<div class="detail-title">📁 住民発案のテーマ</div><div class="empty-note" style="padding:14px;">まだ住民発案のテーマはありません。既存の5分類に投稿することをお勧めします。</div>`;
       return;
     }
-    panel.innerHTML=`<div class="detail-title">📁 住民発案のテーマ｜${customCats.length}テーマ</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:12px;">
-    ${customCats.map(c=>{
+    panel.innerHTML=`<div class="detail-title">📁 住民発案のテーマ｜${customCats.length}テーマ <span style="font-size:11px;font-weight:400;color:#7c8172;">クリックで中分類を開閉（アコーディオン）</span></div>
+    <div style="margin-top:10px;">
+    ${customCats.map((c, idx)=>{
       const count=ideas.filter(i=>i.big===c.key && i.status==='active').length;
-      const subList = (c.baseSubs||[]).slice(0,3).join(' / ');
-      return `<div class="card" style="padding:16px;cursor:pointer;margin:0;" onclick="openCustomTheme('${c.key}')">
-        <div style="font-size:22px;margin-bottom:6px;">${c.icon}</div>
-        <div style="font-weight:800;font-size:14px;margin-bottom:4px;">${escapeHtml(c.label)} <span class="custom-badge">住民発案</span></div>
-        <div style="font-size:11px;color:#7c8172;margin-bottom:8px;">${escapeHtml(c.sublabel||'')}</div>
-        <div style="font-size:11px;color:#5a5f52;">${escapeHtml(subList)}</div>
-        <div style="margin-top:8px;"><span class="mono" style="font-size:11px;background:var(--teal);color:#fff;border-radius:999px;padding:2px 8px;">${count}件</span></div>
+      return `<div class="sub-block" style="margin-bottom:8px;">
+        <div class="sub-head" onclick="toggleSub(event,this)" style="background:#fffbeb;">
+          <span>${c.icon} ${escapeHtml(c.label)} <span class="custom-badge">住民発案</span> <span class="mono" style="font-size:11px;background:var(--teal);color:#fff;border-radius:999px;padding:1px 8px;margin-left:6px;">${count}件</span></span>
+          <span class="mono" style="font-size:12px;color:#7c8172;">▾</span>
+        </div>
+        <div class="sub-body" style="display:none;">
+          <div style="font-size:12px;color:#5a5f52;margin-bottom:10px;">${escapeHtml(c.sublabel||'')} / 中分類：${escapeHtml((c.baseSubs||[]).join(' / '))}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <button class="big-btn amber" style="padding:6px 12px;font-size:12px;" onclick="openCustomTheme('${c.key}')">📂 詳細を見る・投稿を見る</button>
+            <button class="big-btn ghost" style="padding:4px 10px;font-size:11px;" onclick="deleteCustomTheme('${c.key}')">削除</button>
+          </div>
+          <div style="font-size:11px;color:#7c8172;">このテーマへの投稿は「あなたの投稿は ${escapeHtml(c.label)} に格納されました」と表示されます。</div>
+        </div>
       </div>`;
     }).join('')}
     </div>
-    <div style="margin-top:14px;"><button class="big-btn ghost" onclick="toggleCat(CUSTOM_FOLDER_KEY)">閉じる</button></div>`;
+    <div style="margin-top:14px;display:flex;gap:8px;">
+      <button class="big-btn ghost" onclick="toggleCat(CUSTOM_FOLDER_KEY)">閉じる</button>
+      <span style="font-size:11px;color:#7c8172;align-self:center;">※なるべく既存の5分類への投稿を優先してください。新テーマは本当に必要な時のみ作成してください。</span>
+    </div>`;
     return;
   }
 
