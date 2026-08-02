@@ -185,6 +185,24 @@ textarea:focus{outline:none;}
 
 .accordion-enter{animation:accordionOpen .2s ease;}
 @keyframes accordionOpen{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+
+.cork-grid{display:flex;flex-direction:column;gap:10px;}
+.accordion-item{border:1.5px solid var(--line-light);border-radius:10px;background:#fff;overflow:hidden;}
+.accordion-head{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;background:#fff;font-weight:800;transition:.15s;}
+.accordion-head:hover{background:var(--paper-2);}
+.accordion-head.open{background:var(--board);color:var(--paper);}
+.accordion-head .left{display:flex;align-items:center;gap:10px;}
+.accordion-head .ic{font-size:20px;}
+.accordion-head .cnt{font-family:"JetBrains Mono",monospace;font-size:11px;background:var(--teal);color:#fff;border-radius:999px;padding:2px 9px;}
+.accordion-head.open .cnt{background:var(--amber);color:var(--ink);}
+.accordion-body{display:none;padding:0 18px 18px;background:#fcfdf7;border-top:1px solid var(--line-light);}
+.accordion-body.show{display:block;animation:accordionOpen .2s ease;}
+@keyframes accordionOpen{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.idea-full{margin-top:10px;padding:14px;background:#fff;border:1.5px solid var(--line-light);border-radius:8px;}
+.idea-full .summary{font-size:13.5px;line-height:1.9;margin-bottom:10px;}
+.idea-full .persp{font-size:12px;line-height:1.7;background:var(--paper-2);padding:8px 10px;border-radius:6px;margin-bottom:6px;border-left:3px solid var(--teal);}
+.idea-full .persp b{color:var(--teal-deep);}
+
 </style>
 </head>
 <body>
@@ -557,9 +575,12 @@ async function renderMapUpdate(){
 }
 async function toggleUpdate(bigKey){ const btn=document.getElementById('upd-btn-'+bigKey); const body=document.getElementById('upd-body-'+bigKey); if(body.classList.contains('show')){body.classList.remove('show'); body.innerHTML=''; btn.textContent='アップデート'; btn.classList.remove('close'); return;} btn.disabled=true; body.classList.add('show'); body.innerHTML='<span class="update-loading">生成中…</span>'; try{ const text=await blendAI(bigKey); body.innerHTML=escapeHtml(text); btn.textContent='閉じる'; btn.classList.add('close');}catch(e){body.innerHTML='失敗：'+escapeHtml(e.message);}finally{btn.disabled=false;}}
 const CUSTOM_FOLDER_KEY = 'FOLDER-CUSTOM';
+
 async function renderBoard(){
   await loadIdeas();
   const grid=document.getElementById('corkGrid');
+  const panel=document.getElementById('detailPanel');
+  if(panel){ panel.style.display='none'; panel.innerHTML=''; }
   const cats = getAllCategories().filter(c=>c.key && !c.key.startsWith('UNKNOWN'));
   const baseCats = cats.filter(c=>BASE_CATEGORIES.some(b=>b.key===c.key));
   const customCats = cats.filter(c=>!BASE_CATEGORIES.some(b=>b.key===c.key));
@@ -567,24 +588,45 @@ async function renderBoard(){
 
   const baseHtml = baseCats.map(c=>{
     const count=ideas.filter(i=>i.big===c.key && i.status==='active').length;
-    return `<div class="pin-card ${openCat===c.key?'open':''}" onclick="toggleCat('${c.key}')"><div class="tape"></div><div class="ic">${c.icon}</div><div class="lbl">${c.label}</div><div class="cnt ${count===0?'zero':''}">${count}件</div></div>`;
+    const isOpen = openCat===c.key;
+    const subs = getSubs(c.key);
+    const subsHtml = subs.map(s=>{
+      const list=ideasForSub(c.key,s);
+      const archived=archivedForSub(c.key,s);
+      return `<div class="sub-block"><div class="sub-head" onclick="toggleSub(event,this)"><span>${escapeHtml(s.label)}</span><span class="mono" style="font-size:12px;color:#7c8172;">${list.length}件 ▾</span></div><div class="sub-body" style="display:${isOpen?'none':'none'}">${list.length?list.map(i=>ideaNoteHtml(i)).join(''):'<div class="empty-note">まだ投稿がありません。</div>'}${archived.length?`<div class="archive-toggle" onclick="event.stopPropagation();this.nextElementSibling.style.display=(this.nextElementSibling.style.display==='block'?'none':'block');">📁 元記事を見る（${archived.length}件）</div><div class="archive-list">${archived.map(a=>`<div class="archive-item"><div class="at">${escapeHtml(a.title)}</div><div class="as">${escapeHtml(a.summary)}</div></div>`).join('')}</div>`:''}</div></div>`;
+    }).join('');
+    return `<div class="accordion-item"><div class="accordion-head ${isOpen?'open':''}" onclick="toggleCat('${c.key}')"><div class="left"><span class="ic">${c.icon}</span><span>${escapeHtml(c.label)}</span><span class="cnt">${count}件</span></div><span>${isOpen?'▴':'▾'}</span></div><div class="accordion-body ${isOpen?'show':''}" style="display:${isOpen?'block':'none'}">${subsHtml || '<div class="empty-note">中分類がありません</div>'}</div></div>`;
   }).join('');
 
-  // 住民発案は1つのフォルダにまとめる
-  const folderHtml = `<div class="pin-card ${openCat===CUSTOM_FOLDER_KEY?'open':''}" onclick="toggleCat('${CUSTOM_FOLDER_KEY}')" style="border:2px dashed var(--amber);background:#fffbeb;">
-    <div class="tape" style="background:var(--amber);"></div>
-    <div class="ic">📁</div>
-    <div class="lbl">住民発案のテーマ</div>
-    <div class="cnt ${customTotal===0?'zero':''}">${customCats.length}テーマ / ${customTotal}件</div>
-  </div>`;
+  // 住民発案フォルダをアコーディオン1つに
+  let customFolderHtml = '';
+  if(customCats.length===0){
+    customFolderHtml = `<div class="accordion-item" style="border:2px dashed var(--amber);"><div class="accordion-head" onclick="toggleCat('${CUSTOM_FOLDER_KEY}')"><div class="left"><span class="ic">📁</span><span>住民発案のテーマ</span><span class="cnt" style="background:#a3a89a;">0テーマ</span></div><span>${openCat===CUSTOM_FOLDER_KEY?'▴':'▾'}</span></div><div class="accordion-body ${openCat===CUSTOM_FOLDER_KEY?'show':''}" style="display:${openCat===CUSTOM_FOLDER_KEY?'block':'none'}"><div class="empty-note">まだ住民発案のテーマはありません。既存の5分類への投稿を優先してください。</div></div></div>`;
+  } else {
+    const isFolderOpen = openCat===CUSTOM_FOLDER_KEY || customCats.some(c=>openCat===c.key);
+    const inner = customCats.map(c=>{
+      const count=ideas.filter(i=>i.big===c.key && i.status==='active').length;
+      const isThisOpen = openCat===c.key;
+      const subs = getSubs(c.key);
+      const subsHtml = subs.map(s=>{
+        const list=ideasForSub(c.key,s);
+        return `<div class="sub-block"><div class="sub-head" onclick="toggleSub(event,this)"><span>${escapeHtml(s.label)}</span><span class="mono" style="font-size:12px;color:#7c8172;">${list.length}件 ▾</span></div><div class="sub-body">${list.length?list.map(i=>ideaNoteHtml(i)).join(''):'<div class="empty-note">まだ投稿がありません。</div>'}</div></div>`;
+      }).join('');
+      return `<div class="accordion-item" style="margin-bottom:8px;border-color:#e8a33d;background:#fffbeb;"><div class="accordion-head ${isThisOpen?'open':''}" onclick="event.stopPropagation();toggleCustomInside('${c.key}')"><div class="left"><span class="ic">${c.icon}</span><span>${escapeHtml(c.label)} <span class="custom-badge">住民発案</span></span><span class="cnt">${count}件</span></div><span>${isThisOpen?'▴':'▾'}</span></div><div class="accordion-body ${isThisOpen?'show':''}" id="custom-body-${c.key}" style="display:${isThisOpen?'block':'none'}"><div style="font-size:12px;color:#5a5f52;margin-bottom:10px;">${escapeHtml(c.sublabel||'')} / 中分類：${escapeHtml((c.baseSubs||[]).join(' / '))}</div>${subsHtml}<div style="margin-top:10px;display:flex;gap:8px;"><button class="big-btn ghost" style="padding:4px 10px;font-size:11px;" onclick="event.stopPropagation();deleteCustomTheme('${c.key}')">削除</button></div></div></div>`;
+    }).join('');
+    customFolderHtml = `<div class="accordion-item" style="border:2px dashed var(--amber);"><div class="accordion-head ${isFolderOpen?'open':''}" onclick="toggleCat('${CUSTOM_FOLDER_KEY}')"><div class="left"><span class="ic">📁</span><span>住民発案のテーマ</span><span class="cnt" style="background:var(--amber);color:var(--ink);">${customCats.length}テーマ / ${customTotal}件</span></div><span>${isFolderOpen?'▴':'▾'}</span></div><div class="accordion-body ${isFolderOpen?'show':''}" style="display:${isFolderOpen?'block':'none'}"><div style="font-size:11px;color:#7c8172;margin-bottom:10px;">クリックで中分類を開閉。なるべく既存5分類を優先してください。</div>${inner}</div></div>`;
+  }
 
-  const unknownIdeas = ideas.filter(i=>String(i.big).startsWith('UNKNOWN'));
-  const unknownHtml = unknownIdeas.length ? `<div style="grid-column:1/-1;margin-top:10px;padding:10px;background:#fff3cd;border-radius:6px;font-size:12px;">未分類: ${unknownIdeas.length}件<button onclick="cleanupUnknownCategories()" style="margin-left:10px;padding:2px 8px;border-radius:4px;border:1px solid #ccc;">整理</button></div>` : '';
-
-  grid.innerHTML = baseHtml + folderHtml + unknownHtml;
-  renderDetail();
+  grid.innerHTML = baseHtml + customFolderHtml;
 }
-function cleanupUnknownCategories(){
+
+function toggleCustomInside(key){
+  if(openCat===key){ openCat=CUSTOM_FOLDER_KEY; }
+  else { openCat=key; }
+  renderBoard();
+}
+
+function cleanupUnknownCategories(){function cleanupUnknownCategories(){
   if(!confirm('未分類を一旦クリアして再読み込みしますか？')) return;
   const customs = loadCustomCategories().filter(c=>!c.key.startsWith('UNKNOWN') && !c.label.startsWith('UNKNOWN'));
   saveCustomCategories(customs);
@@ -592,7 +634,7 @@ function cleanupUnknownCategories(){
   location.reload();
 }
 
-function toggleCat(key){
+function toggleCat(key){ if(typeof renderDetail_old==='function'){ /* legacy no-op */ } 
   if(openCat===key){ openCat=null; }
   else { openCat=key; }
   // フォルダを開いた時は中をすぐ見せる
@@ -601,17 +643,11 @@ function toggleCat(key){
   }
   renderBoard();
 }
-async function openCustomTheme(key){
+function openCustomTheme(key){
   openCat = key;
-  // 念のため最新の投稿を読み込んでから詳細を表示（違うテーマが表示されるバグ対策）
-  await loadIdeas();
   renderBoard();
-  setTimeout(()=>{
-    const panel=document.getElementById('detailPanel');
-    if(panel) panel.scrollIntoView({behavior:'smooth', block:'start'});
-  }, 150);
 }
-function renderDetail(){
+function renderDetail_old(){
   const panel=document.getElementById('detailPanel');
   if(!openCat){panel.style.display='none'; panel.innerHTML=''; return;}
 
@@ -635,9 +671,8 @@ function renderDetail(){
         <div class="sub-body" style="display:none;">
           <div style="font-size:12px;color:#5a5f52;margin-bottom:10px;">${escapeHtml(c.sublabel||'')} / 中分類：${escapeHtml((c.baseSubs||[]).join(' / '))}</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-            <button class="big-btn amber" style="padding:6px 12px;font-size:12px;" onclick="event.stopPropagation();openCustomTheme('${c.key}')">📂 詳細を見る・投稿を見る</button>
-            <button class="big-btn ghost" style="padding:6px 12px;font-size:12px;" onclick="event.stopPropagation();openCat='${CUSTOM_FOLDER_KEY}';renderBoard();document.getElementById('corkGrid').scrollIntoView({behavior:'smooth'})">← 一覧に戻る</button>
-            <button class="big-btn ghost" style="padding:4px 10px;font-size:11px;" onclick="event.stopPropagation();deleteCustomTheme('${c.key}')">削除</button>
+            <button class="big-btn amber" style="padding:6px 12px;font-size:12px;" onclick="openCustomTheme('${c.key}')">📂 詳細を見る・投稿を見る</button>
+            <button class="big-btn ghost" style="padding:4px 10px;font-size:11px;" onclick="deleteCustomTheme('${c.key}')">削除</button>
           </div>
           <div style="font-size:11px;color:#7c8172;">このテーマへの投稿は「あなたの投稿は ${escapeHtml(c.label)} に格納されました」と表示されます。</div>
         </div>
@@ -669,9 +704,38 @@ async function deleteCustomTheme(key){
   renderBoard();
 }
 
-function ideaNoteHtml(i){ const safeId=i.id.replace(/[^a-zA-Z0-9_-]/g,'_'); return `<div class="idea-note ${i.type==='seed'?'seed':''} ${i.type==='merged'?'merged':''}" onclick="toggleFull(this,'${i.id.replace(/'/g,"\'")}')"><div class="t">${escapeHtml(i.title)} ${typeBadge(i.type)}</div><div class="idea-full" id="full-${safeId}"></div></div>`;}
+function ideaNoteHtml(i){ const safeId=i.id.replace(/[^a-zA-Z0-9_-]/g,'_'); return `<div class="idea-note ${i.type==='seed'?'seed':''} ${i.type==='merged'?'merged':''}" onclick="toggleFull(this,'${i.id.replace(/'/g,"\'")}')"><div class="t">${escapeHtml(i.title)} ${typeBadge(i.type)} <span style="font-size:10px;color:#7c8172;margin-left:6px;">クリックで200文字＋5視点を表示</span></div><div class="idea-full" id="full-${safeId}" style="display:none;"></div></div>`;}
 function typeBadge(type){ if(type==='seed') return '<span class="badge b-seed">新統合</span>'; if(type==='merged') return '<span class="badge b-merged">新統合</span>'; return '<span class="badge b-proposal">単独提案</span>';}
-function toggleFull(noteEl, id){ const full=noteEl.querySelector('.idea-full'); const showing=full.classList.contains('open'); if(showing){full.classList.remove('open'); full.style.display='none'; full.innerHTML=''; return;} const i=ideas.find(x=>x.id===id); if(!i) return; let html=`<div>${escapeHtml(i.summary)}</div>`; full.innerHTML=html; full.classList.add('open'); full.style.display='block';}
+function toggleFull(noteEl, id){
+  const full=noteEl.querySelector('.idea-full');
+  const isHidden = full.style.display==='none' || !full.classList.contains('open');
+  if(!isHidden){ full.classList.remove('open'); full.style.display='none'; full.innerHTML=''; return; }
+  const i=ideas.find(x=>x.id===id);
+  if(!i) return;
+  // 200文字＋5視点を確実に表示（クリックしても表示されないバグ修正）
+  const summary = i.summary || i.raw || '';
+  const core = i.core || '';
+  const change = i.change || '';
+  const success = i.success || '';
+  const concern = i.concern || '';
+  const question = i.question || '';
+  let html = `<div class="summary"><b>📝 要約200文字：</b><br>${escapeHtml(summary)}</div>`;
+  if(core||change||success||concern||question){
+    html += `<div style="margin-top:10px;">`;
+    if(core) html+=`<div class="persp"><b>① 核心：</b> ${escapeHtml(core)}</div>`;
+    if(change) html+=`<div class="persp"><b>② 変化：</b> ${escapeHtml(change)}</div>`;
+    if(success) html+=`<div class="persp"><b>③ 成功事例：</b> ${escapeHtml(success)}</div>`;
+    if(concern) html+=`<div class="persp"><b>④ 懸念点：</b> ${escapeHtml(concern)}</div>`;
+    if(question) html+=`<div class="persp"><b>⑤ 問い：</b> ${escapeHtml(question)}</div>`;
+    html+=`</div>`;
+  }
+  if(i.raw && i.raw!==summary) html+=`<div style="margin-top:8px;font-size:11px;color:#7c8172;border-top:1px dashed #d8dcc9;padding-top:8px;"><b>原文：</b> ${escapeHtml(i.raw.slice(0,300))}</div>`;
+  full.innerHTML=html;
+  full.classList.add('open');
+  full.style.display='block';
+  // スクロールして見やすく
+  setTimeout(()=>{ full.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 50);
+}
 function toggleSub(e, headEl){ e.stopPropagation(); const body=headEl.nextElementSibling; body.style.display=(body.style.display==='block')?'none':'block';}
 function escapeHtml(str){ return (str||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 let micRecognition=null; let micActive=false;
@@ -687,37 +751,7 @@ async function createNewTheme(){
   const btn = document.getElementById('createThemeBtn');
   if(!name){ alert('テーマ名を入力してください'); return; }
   if(getAllCategories().some(c=>c.label===name)){ alert('同名のテーマが既にあります'); return; }
-  btn.disabled=true;
-  status.textContent='🤖 既存の5分類に入るかチェックしています…';
-
-  const keywordMap = [
-    {kw:['防災','防犯','地震','火災','避難','パトロール'], label:'防災・防犯'},
-    {kw:['道路','側溝','斜面','ゴミ','環境','景観','緑','清掃'], label:'インフラ・環境'},
-    {kw:['交流','イベント','祭り','新住民','班長','役員','自治会'], label:'コミュニティ'},
-    {kw:['福祉','見守り','高齢','子育て','ペット','健康','孤立'], label:'福祉・見守り'},
-    {kw:['空き家','DX','担い手','未来','将来','ビジョン'], label:'将来ビジョン'}
-  ];
-  for(const m of keywordMap){
-    if(m.kw.some(k=>name.includes(k) || desc.includes(k))){
-      status.innerHTML=`⚠️ 「${escapeHtml(name)}」は既存の <b>${m.label}</b> に含まれます。<br>新テーマを作らず、そのまま投稿すると <b>${m.label}</b> に自動で分類され「あなたの投稿は ${m.label} に格納されました」と表示されます。<br><br><button class='big-btn ghost' style='padding:6px 12px;font-size:12px;' onclick='closeAddThemeModal();showPage("assist", document.querySelector("nav button:nth-child(3)"))'>そのまま声を届ける</button>`;
-      btn.disabled=false;
-      return;
-    }
-  }
-  try{
-    const customForCheck = BASE_CATEGORIES.map(c=>({label:c.label, subs:c.baseSubs}));
-    const check = await gasCall({action:'analyze', content: `テーマ名：${name} 説明：${desc}`, customCategories: customForCheck});
-    const r = check.result||check;
-    const bigLabel = r['大分類']||'';
-    if(BASE_CATEGORIES.some(b=>b.label===bigLabel || bigLabel.includes(b.label))){
-      const matched = BASE_CATEGORIES.find(b=>b.label===bigLabel || bigLabel.includes(b.label)) || {label:bigLabel};
-      status.innerHTML=`💡 AI判定：この内容は既存の <b>${escapeHtml(matched.label)}</b> に分類されます。<br>新テーマを作る代わりに、そのまま投稿してください。<br><br><button class='big-btn ghost' style='padding:6px 12px;font-size:12px;' onclick='closeAddThemeModal();showPage("assist", document.querySelector("nav button:nth-child(3)"))'>そのまま声を届ける</button>`;
-      btn.disabled=false;
-      return;
-    }
-  }catch(e){ console.log('既存分類チェック失敗', e); }
-
-  status.textContent='🤖 AIが中分類を考えています…';
+  btn.disabled=true; status.textContent='🤖 AIが中分類を考えています…（数秒かかります）';
   let subs = [];
   try{
     // GAS側に generateTheme アクションがあれば使う、なければフォールバック
