@@ -271,13 +271,14 @@ textarea:focus{outline:none;}
   <p style="margin-bottom:14px;font-size:13.5px;color:#5a5f52;">左は変わらない「未来提案の原点」、右は市民の声を反映した最新のアップデート案（ボタンを押すと表示）です。</p>
   <div id="mapUpdateWrap"></div>
   <div style="margin:10px 0 22px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-    <button class="add-theme-btn" onclick="openAddThemeModal()">＋ 住民発案の新テーマを追加</button>
+    <button class="big-btn amber" style="display:none;" onclick="openAddThemeModal()">＋ 好きなテーマで声を届ける</button>
     <span style="font-size:11px;color:#7c8172;">住民の希望で大分類を増やせます。AIが中分類4つを自動作成</span>
   </div>
 
 </section>
 <section id="assist" class="page">
   <h1>🤖 声を届ける - 芦屋市 山手町</h1>
+  <div id="targetThemeBanner" style="display:none;background:#fffbeb;border:2px solid var(--amber);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-weight:700;font-size:13px;"></div>
   <div style="background:#fffbeb;border:1.5px solid var(--amber);border-radius:10px;padding:14px 18px;margin-bottom:18px;">
       <div style="font-weight:800;font-size:14px;margin-bottom:6px;">📝 現在の5分類以外でも、好きなテーマで投稿ください</div>
       <div style="font-size:13px;color:#5a5f52;line-height:1.8;">
@@ -313,21 +314,6 @@ textarea:focus{outline:none;}
   <div id="detailPanel" class="detail-panel"></div>
 </section>
 
-<div id="addThemeModal" class="modal-overlay" style="display:none!important;" onclick="if(event.target===this) closeAddThemeModal()">
-  <div class="modal">
-    <h3>＋ 新しいテーマを立ち上げる</h3>
-    <p style="font-size:13px;color:#5a5f52;margin-bottom:12px;">住民の希望するテーマ名を入力してください。AIが自動で中分類を4つ考えて作成します。<br>例：防災の新展開、子ども食堂、ライト坂の安全対策</p>
-    <input type="text" id="newThemeName" placeholder="テーマ名（例：防災の新展開）">
-    <input type="text" id="newThemeIcon" placeholder="アイコン（絵文字1つ 例：🛡️）" value="✨">
-    <textarea id="newThemeDesc" rows="2" placeholder="簡単な説明（任意）"></textarea>
-    <div id="addThemeStatus" style="font-size:12px;color:var(--teal-deep);margin-bottom:8px;"></div>
-    <div class="btn-row">
-      <button class="big-btn ghost" onclick="closeAddThemeModal()">キャンセル</button>
-      <button class="big-btn amber" id="createThemeBtn" onclick="createNewTheme()">🤖 AIが中分類を考えて作成</button>
-    </div>
-  </div>
-</div>
-
 </main>
 <script>
 const GAS_URL_DEFAULT = "https://script.google.com/macros/s/AKfycbyLTOGBHyo6Y3ojZZXmDm-yBO_bT2qd1pACQVBiiRMPr4pHFQFfLfpd1GtWBo-4nZDvVg/exec";
@@ -342,6 +328,46 @@ const BASE_CATEGORIES = [
   { key: "BIG-5", icon: "🚀", label: "将来ビジョン", sublabel: "持続可能な自治会の未来", baseSubs: ["空き家・継承", "自治会のDX", "次世代の担い手", "街の未来像"] },
 ];
 const CUSTOM_KEY = 'yamatecho_custom_categories_v1';
+const TARGET_THEME_STORAGE = 'yamatecho_target_custom_theme';
+let TARGET_CUSTOM_THEME_KEY = localStorage.getItem(TARGET_THEME_STORAGE) || null;
+
+function goToAssistWithTheme(key){
+  if(key && !BASE_CATEGORIES.some(b=>b.key===key)){
+    // 住民発案テーマの場合はそのままターゲットに
+    TARGET_CUSTOM_THEME_KEY = key;
+    localStorage.setItem(TARGET_THEME_STORAGE, key);
+  } else if(key){
+    TARGET_CUSTOM_THEME_KEY = key;
+    localStorage.setItem(TARGET_THEME_STORAGE, key);
+  } else {
+    TARGET_CUSTOM_THEME_KEY = null;
+    localStorage.removeItem(TARGET_THEME_STORAGE);
+  }
+  const btn = document.querySelector('nav button:nth-child(2)');
+  showPage('assist', btn);
+  setTimeout(()=>{ showTargetThemeBanner(); }, 200);
+}
+function clearTargetTheme(){
+  TARGET_CUSTOM_THEME_KEY = null;
+  localStorage.removeItem(TARGET_THEME_STORAGE);
+  const banner = document.getElementById('targetThemeBanner');
+  if(banner) banner.style.display='none';
+}
+function showTargetThemeBanner(){
+  const banner = document.getElementById('targetThemeBanner');
+  if(!banner) return;
+  if(TARGET_CUSTOM_THEME_KEY){
+    const cat = getAllCategories().find(c=>c.key===TARGET_CUSTOM_THEME_KEY) || BASE_CATEGORIES.find(c=>c.key===TARGET_CUSTOM_THEME_KEY);
+    if(cat){
+      banner.innerHTML=`📁 「${cat.icon} ${cat.label}」への投稿としてAIが分析します。もちろん自由なテーマでもOKです。<button class="big-btn ghost" style="margin-left:10px;padding:4px 10px;font-size:11px;" onclick="clearTargetTheme()">テーマ指定を解除</button>`;
+      banner.style.display='block';
+      return;
+    }
+  }
+  banner.innerHTML=`💡 現在の5分類以外でも好きなテーマで投稿ください。例：子ども食堂、夜の安全など自由に。AIが自動で分類し、新しいテーマなら「〇〇のテーマで新しい分類ができました」と表示されます。`;
+  banner.style.display='block';
+}
+
 const CUSTOM_SUMMARY_KEY = 'yamatecho_custom_summaries_v1';
 let REMOTE_CUSTOM_CATEGORIES = [];
 let REMOTE_LOADED = false;
@@ -376,8 +402,13 @@ function saveCustomSummaries(map){
   localStorage.setItem(CUSTOM_SUMMARY_KEY, JSON.stringify(map));
 }
 function getAllCategories(){
-  const customs = REMOTE_LOADED ? [...REMOTE_CUSTOM_CATEGORIES, ...loadCustomCategories().filter(c=>!REMOTE_CUSTOM_CATEGORIES.some(r=>r.label===c.label))] : loadCustomCategories();
-  // 重複除去（labelで）
+  const customsRaw = REMOTE_LOADED ? [...REMOTE_CUSTOM_CATEGORIES, ...loadCustomCategories().filter(c=>!REMOTE_CUSTOM_CATEGORIES.some(r=>r.label===c.label))] : loadCustomCategories();
+  const customs = customsRaw.filter(c=>{
+    const mergeBase = shouldMergeToBase(c.label, c.sublabel);
+    if(mergeBase){ return false; }
+    if(!c.baseSubs || c.baseSubs.length<2) return false;
+    return true;
+  });
   const seen=new Set();
   const uniq=[];
   for(const c of [...BASE_CATEGORIES, ...customs]){
@@ -410,6 +441,22 @@ async function fetchRemoteCustomCategories(){
 
 const CATEGORIES = getAllCategories(); // 後方互換用、実際は getAllCategories() を使う
 function getCategories(){ return getAllCategories(); }
+
+function shouldMergeToBase(label, desc){
+  const map=[
+    {kw:['防災','防犯','地震','火災','避難','パトロール','安否','備蓄'], base:'防災・防犯'},
+    {kw:['道路','側溝','斜面','擁壁','ゴミ','環境','景観','緑','清掃','自然','インフラ'], base:'インフラ・環境'},
+    {kw:['交流','イベント','祭り','新住民','班長','役員','自治会','コミュニティ','つながり'], base:'コミュニティ'},
+    {kw:['福祉','見守り','高齢','子育て','ペット','健康','孤立','介護'], base:'福祉・見守り'},
+    {kw:['空き家','DX','デジタル','担い手','未来','将来','ビジョン','次世代','持続'], base:'将来ビジョン'}
+  ];
+  const text = (label||'') + ' ' + (desc||'');
+  for(const m of map){
+    if(m.kw.some(k=>text.includes(k))) return m.base;
+  }
+  return null;
+}
+
 let CUSTOM_SUMMARIES = loadCustomSummaries();
 const AI_BASE_SUMMARY_BASE = {
   "BIG-1": "山手町の防災・防犯は、地域の安全を守るすべての基盤です。自主防災訓練や防犯パトロールを通じて住民同士の顔の見える関係を築き、安否確認体制や災害備蓄を強化します。",
@@ -619,15 +666,15 @@ async function renderMapUpdate(){
 async function toggleUpdate(bigKey){ const btn=document.getElementById('upd-btn-'+bigKey); const body=document.getElementById('upd-body-'+bigKey); if(body.classList.contains('show')){body.classList.remove('show'); body.innerHTML=''; btn.textContent='アップデート'; btn.classList.remove('close'); return;} btn.disabled=true; body.classList.add('show'); body.innerHTML='<span class="update-loading">生成中…</span>'; try{ const text=await blendAI(bigKey); body.innerHTML=escapeHtml(text); btn.textContent='閉じる'; btn.classList.add('close');}catch(e){body.innerHTML='失敗：'+escapeHtml(e.message);}finally{btn.disabled=false;}}
 const CUSTOM_FOLDER_KEY = 'FOLDER-CUSTOM';
 
+
+const CUSTOM_FOLDER_KEY = 'FOLDER-CUSTOM'; // deprecated, kept for compatibility
+
 async function renderBoard(){
   await loadIdeas();
   const grid=document.getElementById('corkGrid');
   const panel=document.getElementById('detailPanel');
   if(panel){ panel.style.display='none'; panel.innerHTML=''; }
-  const cats = getAllCategories().filter(c=>c.key && !c.key.startsWith('UNKNOWN'));
-  const baseCats = cats.filter(c=>BASE_CATEGORIES.some(b=>b.key===c.key));
-  const customCats = cats.filter(c=>!BASE_CATEGORIES.some(b=>b.key===c.key));
-  const customTotal = customCats.reduce((sum,c)=> sum + ideas.filter(i=>i.big===c.key && i.status==='active').length, 0);
+  const baseCats = BASE_CATEGORIES;
 
   const baseHtml = baseCats.map(c=>{
     const count=ideas.filter(i=>i.big===c.key && i.status==='active').length;
@@ -636,40 +683,48 @@ async function renderBoard(){
     const subsHtml = subs.map(s=>{
       const list=ideasForSub(c.key,s);
       const archived=archivedForSub(c.key,s);
-      return `<div class="sub-block"><div class="sub-head" onclick="toggleSub(event,this)"><span>${escapeHtml(s.label)}</span><span class="mono" style="font-size:12px;color:#7c8172;">${list.length}件 ▾</span></div><div class="sub-body" style="display:${isOpen?'none':'none'}">${list.length?list.map(i=>ideaNoteHtml(i)).join(''):'<div class="empty-note">まだ投稿がありません。</div>'}${archived.length?`<div class="archive-toggle" onclick="event.stopPropagation();this.nextElementSibling.style.display=(this.nextElementSibling.style.display==='block'?'none':'block');">📁 元記事を見る（${archived.length}件）</div><div class="archive-list">${archived.map(a=>`<div class="archive-item"><div class="at">${escapeHtml(a.title)}</div><div class="as">${escapeHtml(a.summary)}</div></div>`).join('')}</div>`:''}</div></div>`;
+      return `<div class="sub-block"><div class="sub-head" onclick="toggleSub(event,this)"><span>${escapeHtml(s.label)}</span><span class="mono" style="font-size:12px;color:#7c8172;">${list.length}件 ▾</span></div><div class="sub-body" style="display:none;">${list.length?list.map(i=>ideaNoteHtml(i)).join(''):'<div class="empty-note">まだ投稿がありません。このテーマで声を届ける → <button class="big-btn ghost" style="padding:4px 10px;font-size:11px;" onclick="goToAssistWithTheme(null)">声を届ける</button></div>'}${archived.length?`<div class="archive-toggle" onclick="event.stopPropagation();this.nextElementSibling.style.display=(this.nextElementSibling.style.display==='block'?'none':'block');">📁 元記事を見る（${archived.length}件）</div><div class="archive-list">${archived.map(a=>`<div class="archive-item"><div class="at">${escapeHtml(a.title)}</div><div class="as">${escapeHtml(a.summary)}</div></div>`).join('')}</div>`:''}</div></div>`;
     }).join('');
-    return `<div class="accordion-item"><div class="accordion-head ${isOpen?'open':''}" onclick="toggleCat('${c.key}')"><div class="left"><span class="ic">${c.icon}</span><span>${escapeHtml(c.label)}</span><span class="cnt">${count}件</span></div><span>${isOpen?'▴':'▾'}</span></div><div class="accordion-body ${isOpen?'show':''}" style="display:${isOpen?'block':'none'}">${subsHtml || '<div class="empty-note">中分類がありません</div>'}</div></div>`;
+    return `<div class="accordion-item"><div class="accordion-head ${isOpen?'open':''}" onclick="toggleCat('${c.key}')"><div class="left"><span class="ic">${c.icon}</span><span>${escapeHtml(c.label)}</span><span class="cnt">${count}件</span></div><span>${isOpen?'▴':'▾'}</span></div><div class="accordion-body ${isOpen?'show':''}" style="display:${isOpen?'block':'none'}">${subsHtml || '<div class="empty-note">中分類がありません</div>'}<div style="margin-top:12px;"><button class="big-btn amber" style="padding:8px 14px;font-size:12px;" onclick="event.stopPropagation();goToAssistWithTheme('${c.key}')">✍ この「${escapeHtml(c.label)}」に声を届ける</button></div></div></div>`;
   }).join('');
 
-  // 住民発案フォルダをアコーディオン1つに
-  let customFolderHtml = '';
-  if(customCats.length===0){
-    customFolderHtml = `<div class="accordion-item" style="border:2px dashed var(--amber);"><div class="accordion-head" onclick="toggleCat('${CUSTOM_FOLDER_KEY}')"><div class="left"><span class="ic">📁</span><span>住民発案のテーマ</span><span class="cnt" style="background:#a3a89a;">0テーマ</span></div><span>${openCat===CUSTOM_FOLDER_KEY?'▴':'▾'}</span></div><div class="accordion-body ${openCat===CUSTOM_FOLDER_KEY?'show':''}" style="display:${openCat===CUSTOM_FOLDER_KEY?'block':'none'}"><div class="empty-note">まだ住民発案のテーマはありません。既存の5分類への投稿を優先してください。</div></div></div>`;
-  } else {
-    const isFolderOpen = openCat===CUSTOM_FOLDER_KEY || customCats.some(c=>openCat===c.key);
-    const inner = customCats.map(c=>{
-      const count=ideas.filter(i=>i.big===c.key && i.status==='active').length;
-      const isThisOpen = openCat===c.key;
-      const subs = getSubs(c.key);
-      const subsHtml = subs.map(s=>{
-        const list=ideasForSub(c.key,s);
-        return `<div class="sub-block"><div class="sub-head" onclick="toggleSub(event,this)"><span>${escapeHtml(s.label)}</span><span class="mono" style="font-size:12px;color:#7c8172;">${list.length}件 ▾</span></div><div class="sub-body">${list.length?list.map(i=>ideaNoteHtml(i)).join(''):'<div class="empty-note">まだ投稿がありません。</div>'}</div></div>`;
+  // 住民発案の残り（本当に5分類に入らないものだけ）を小さく表示（なければ非表示）
+  const customsRaw = getAllCategories().filter(c=>!BASE_CATEGORIES.some(b=>b.key===c.key));
+  const customs = customsRaw.filter(c=>!shouldMergeToBase(c.label, c.sublabel));
+  let customHtml = '';
+  if(customs.length>0){
+    const customTotal = customs.reduce((sum,c)=> sum + ideas.filter(i=>i.big===c.key).length, 0);
+    if(customTotal>0){
+      const isOpen = openCat===CUSTOM_FOLDER_KEY;
+      const inner = customs.map(c=>{
+        const count=ideas.filter(i=>i.big===c.key).length;
+        return `<div style="font-size:12px;padding:6px 0;border-bottom:1px dashed #ddd;">${c.icon} ${escapeHtml(c.label)} (${count}件) - <a href="#" onclick="event.preventDefault();goToAssistWithTheme('${c.key}')" style="color:var(--teal);">声を届ける</a></div>`;
       }).join('');
-      return `<div class="accordion-item" style="margin-bottom:8px;border-color:#e8a33d;background:#fffbeb;"><div class="accordion-head ${isThisOpen?'open':''}" onclick="event.stopPropagation();toggleCustomInside('${c.key}')"><div class="left"><span class="ic">${c.icon}</span><span>${escapeHtml(c.label)} <span class="custom-badge">住民発案</span></span><span class="cnt">${count}件</span></div><span>${isThisOpen?'▴':'▾'}</span></div><div class="accordion-body ${isThisOpen?'show':''}" id="custom-body-${c.key}" style="display:${isThisOpen?'block':'none'}"><div style="font-size:12px;color:#5a5f52;margin-bottom:10px;">${escapeHtml(c.sublabel||'')} / 中分類：${escapeHtml((c.baseSubs||[]).join(' / '))}</div>${subsHtml}<div style="margin-top:10px;display:flex;gap:8px;"><button class="big-btn ghost" style="padding:4px 10px;font-size:11px;" onclick="event.stopPropagation();deleteCustomTheme('${c.key}')">削除</button></div></div></div>`;
-    }).join('');
-    customFolderHtml = `<div class="accordion-item" style="border:2px dashed var(--amber);"><div class="accordion-head ${isFolderOpen?'open':''}" onclick="toggleCat('${CUSTOM_FOLDER_KEY}')"><div class="left"><span class="ic">📁</span><span>住民発案のテーマ</span><span class="cnt" style="background:var(--amber);color:var(--ink);">${customCats.length}テーマ / ${customTotal}件</span></div><span>${isFolderOpen?'▴':'▾'}</span></div><div class="accordion-body ${isFolderOpen?'show':''}" style="display:${isFolderOpen?'block':'none'}"><div style="font-size:11px;color:#7c8172;margin-bottom:10px;">クリックで中分類を開閉。なるべく既存5分類を優先してください。</div>${inner}</div></div>`;
+      customHtml = `<div class="accordion-item" style="border:1px dashed #ccc;background:#fafafa;margin-top:16px;"><div class="accordion-head" onclick="toggleCat('${CUSTOM_FOLDER_KEY}')"><div class="left"><span class="ic">📁</span><span>その他・住民発案（${customs.length}）</span><span class="cnt" style="background:#999;">${customTotal}件</span></div><span>${isOpen?'▴':'▾'}</span></div><div class="accordion-body" style="display:${isOpen?'block':'none'}"><div style="font-size:11px;color:#7c8172;margin-bottom:8px;">※なるべく5分類に統合済み。残りは本当に新しいテーマのみです。</div>${inner}<div style="margin-top:8px;"><button class="big-btn ghost" style="padding:4px 10px;font-size:11px;" onclick="cleanupCustomThemes()">🧹 住民発案テーマを整理（5分類に入るものは統合）</button></div></div></div>`;
+    }
   }
 
-  grid.innerHTML = baseHtml + customFolderHtml;
+  grid.innerHTML = baseHtml + customHtml;
 }
 
-function toggleCustomInside(key){
-  // 住民発案テーマをクリックしたら声を届けるに一本化
-  goToAssistWithTheme(key);
+function cleanupCustomThemes(){
+  if(!confirm('住民発案テーマのうち、5分類に入るものは統合し、不要なカスタム分類を削除しますか？')) return;
+  const customs = loadCustomCategories();
+  const filtered = customs.filter(c=>{
+    const merge = shouldMergeToBase(c.label, c.sublabel);
+    return !merge;
+  });
+  saveCustomCategories(filtered);
+  REMOTE_CUSTOM_CATEGORIES = REMOTE_CUSTOM_CATEGORIES.filter(c=>{
+    const merge = shouldMergeToBase(c.label, c.sublabel);
+    return !merge;
+  });
+  alert('整理しました。5分類に入るテーマは統合され、ボードはスッキリしました。');
+  renderBoard();
 }
-async function openCustomTheme(key){
-  goToAssistWithTheme(key);
-}
+
+function toggleCustomInside(key){ goToAssistWithTheme(key); }
+async function openCustomTheme(key){ goToAssistWithTheme(key); }
 
 function cleanupUnknownCategories(){
   if(!confirm('未分類を一旦クリアして再読み込みしますか？')) return;
@@ -788,8 +843,8 @@ function escapeHtml(str){ return (str||'').replace(/[&<>"']/g, m=>({'&':'&amp;',
 let micRecognition=null; let micActive=false;
 function toggleMic(){ const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR){alert('Chromeでお試しください');return;} const btn=document.getElementById('micBtn'); if(micActive){micRecognition.stop();return;} micRecognition=new SR(); micRecognition.lang='ja-JP'; micRecognition.continuous=true; micRecognition.interimResults=false; micRecognition.onstart=()=>{micActive=true; btn.textContent='⏹ 停止';}; micRecognition.onend=()=>{micActive=false; btn.textContent='🎤 音声で入力する';}; micRecognition.onresult=(e)=>{let t=''; for(let i=e.resultIndex;i<e.results.length;i++) if(e.results[i].isFinal) t+=e.results[i][0].transcript; if(t){const ta=document.getElementById('userInput'); ta.value=(ta.value?ta.value+' ':'')+t;}}; micRecognition.start();}
 
-function openAddThemeModal(){ document.getElementById('addThemeModal').classList.add('open'); }
-function closeAddThemeModal(){ document.getElementById('addThemeModal').classList.remove('open'); document.getElementById('addThemeStatus').textContent=''; }
+function openAddThemeModal(){ goToAssistWithTheme(null); }
+function closeAddThemeModal(){}
 async function createNewTheme(){
   const name = document.getElementById('newThemeName').value.trim();
   const icon = document.getElementById('newThemeIcon').value.trim() || '✨';
