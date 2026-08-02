@@ -278,6 +278,7 @@ textarea:focus{outline:none;}
 </section>
 <section id="assist" class="page">
   <h1>🤖 声を届ける - 芦屋市 山手町</h1>
+  <div id="targetThemeBanner" style="display:none;background:#fffbeb;border:2px solid var(--amber);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-weight:700;font-size:13px;"></div>
   <p style="margin-bottom:18px;color:#5a5f52;">まちについて思っていることを自由に書いてください。AIが「核心・変化・成功事例・懸念点・問い」の5つの視点で読み解き、要約・タイトル・テーマを整理します。</p>
   <div class="settings-panel">
     <div class="settings-head" onclick="this.nextElementSibling.classList.toggle('open')">🔗 連携設定（クリックで開閉）</div>
@@ -335,6 +336,42 @@ const BASE_CATEGORIES = [
   { key: "BIG-5", icon: "🚀", label: "将来ビジョン", sublabel: "持続可能な自治会の未来", baseSubs: ["空き家・継承", "自治会のDX", "次世代の担い手", "街の未来像"] },
 ];
 const CUSTOM_KEY = 'yamatecho_custom_categories_v1';
+const TARGET_THEME_STORAGE = 'yamatecho_target_custom_theme';
+let TARGET_CUSTOM_THEME_KEY = localStorage.getItem(TARGET_THEME_STORAGE) || null;
+
+function goToAssistWithTheme(key){
+  TARGET_CUSTOM_THEME_KEY = key;
+  localStorage.setItem(TARGET_THEME_STORAGE, key);
+  const cat = getAllCategories().find(c=>c.key===key);
+  const label = cat ? cat.label : key;
+  // 声を届けるページへ遷移
+  const btn = document.querySelector('nav button:nth-child(3)');
+  showPage('assist', btn);
+  // テーマバナーを表示
+  setTimeout(()=>{ showTargetThemeBanner(); }, 200);
+}
+
+function clearTargetTheme(){
+  TARGET_CUSTOM_THEME_KEY = null;
+  localStorage.removeItem(TARGET_THEME_STORAGE);
+  const banner = document.getElementById('targetThemeBanner');
+  if(banner) banner.style.display='none';
+}
+
+function showTargetThemeBanner(){
+  const banner = document.getElementById('targetThemeBanner');
+  if(!banner) return;
+  if(TARGET_CUSTOM_THEME_KEY){
+    const cat = getAllCategories().find(c=>c.key===TARGET_CUSTOM_THEME_KEY);
+    if(cat){
+      banner.innerHTML=`📁 住民発案テーマ「${cat.icon} ${cat.label}」への投稿です。AIが5つの視点と200文字要約で分析し、このテーマに格納します。<button class="big-btn ghost" style="margin-left:10px;padding:4px 10px;font-size:11px;" onclick="clearTargetTheme()">解除して通常投稿</button>`;
+      banner.style.display='block';
+      return;
+    }
+  }
+  banner.style.display='none';
+}
+
 const CUSTOM_SUMMARY_KEY = 'yamatecho_custom_summaries_v1';
 let REMOTE_CUSTOM_CATEGORIES = [];
 let REMOTE_LOADED = false;
@@ -369,13 +406,8 @@ function saveCustomSummaries(map){
   localStorage.setItem(CUSTOM_SUMMARY_KEY, JSON.stringify(map));
 }
 function getAllCategories(){
-  const customsRaw = REMOTE_LOADED ? [...REMOTE_CUSTOM_CATEGORIES, ...loadCustomCategories().filter(c=>!REMOTE_CUSTOM_CATEGORIES.some(r=>r.label===c.label))] : loadCustomCategories();
-  const customs = customsRaw.filter(c=>{
-    const mergeBase = shouldMergeToBase(c.label, c.sublabel);
-    if(mergeBase){ return false; }
-    if(!c.baseSubs || c.baseSubs.length<2) return false;
-    return true;
-  });
+  const customs = REMOTE_LOADED ? [...REMOTE_CUSTOM_CATEGORIES, ...loadCustomCategories().filter(c=>!REMOTE_CUSTOM_CATEGORIES.some(r=>r.label===c.label))] : loadCustomCategories();
+  // 重複除去（labelで）
   const seen=new Set();
   const uniq=[];
   for(const c of [...BASE_CATEGORIES, ...customs]){
@@ -408,22 +440,6 @@ async function fetchRemoteCustomCategories(){
 
 const CATEGORIES = getAllCategories(); // 後方互換用、実際は getAllCategories() を使う
 function getCategories(){ return getAllCategories(); }
-
-function shouldMergeToBase(label, desc){
-  const map=[
-    {kw:['防災','防犯','地震','火災','避難','パトロール','安否','備蓄'], base:'防災・防犯'},
-    {kw:['道路','側溝','斜面','擁壁','ゴミ','環境','景観','緑','清掃','自然','インフラ'], base:'インフラ・環境'},
-    {kw:['交流','イベント','祭り','新住民','班長','役員','自治会','コミュニティ','つながり'], base:'コミュニティ'},
-    {kw:['福祉','見守り','高齢','子育て','ペット','健康','孤立','介護'], base:'福祉・見守り'},
-    {kw:['空き家','DX','デジタル','担い手','未来','将来','ビジョン','次世代','持続'], base:'将来ビジョン'}
-  ];
-  const text = (label||'') + ' ' + (desc||'');
-  for(const m of map){
-    if(m.kw.some(k=>text.includes(k))) return m.base;
-  }
-  return null;
-}
-
 let CUSTOM_SUMMARIES = loadCustomSummaries();
 const AI_BASE_SUMMARY_BASE = {
   "BIG-1": "山手町の防災・防犯は、地域の安全を守るすべての基盤です。自主防災訓練や防犯パトロールを通じて住民同士の顔の見える関係を築き、安否確認体制や災害備蓄を強化します。",
@@ -465,6 +481,7 @@ function showPage(id, btn){
   if(btn) btn.classList.add('active');
   if(id==='tree') renderBoard();
   if(id==='home') renderMapUpdate();
+  if(id==='assist'){ setTimeout(()=>showTargetThemeBanner(), 100); }
   // スマホで下が表示されてしまう問題を修正：常にページトップへスクロール
   window.scrollTo({top:0, behavior:'auto'});
   setTimeout(()=>{ window.scrollTo({top:0, behavior:'auto'}); if(target) target.scrollIntoView({behavior:'auto', block:'start'}); }, 50);
@@ -475,26 +492,26 @@ function opinionToIdea(o, idx){
   if(!o || !o.title) return null;
   const bigName = String(o.bigCatName||'').trim();
   const midName = String(o.midCatName||'').trim();
-  // 5視点・200文字がないものは削除（50文字未満かつ5視点なし）
-  const summaryLen = String(o.summary||'').length;
-  const hasContent = !!(o.content||o.summary);
-  if(!hasContent || summaryLen<20) return null;
-
   let bigDef = getAllCategories().find(c=>c.label===bigName);
+  // もしシートに知らない大分類名があれば、その場でカスタムカテゴリとして自動登録
   if(!bigDef && bigName){
-    const mergeBase = shouldMergeToBase(bigName, midName);
-    if(mergeBase){
-      bigDef = getAllCategories().find(c=>c.label===mergeBase) || BASE_CATEGORIES.find(c=>c.label===mergeBase);
+    const existing = loadCustomCategories();
+    if(!existing.some(c=>c.label===bigName)){
+      const newKey = 'BIG-AUTO-' + bigName.replace(/\s+/g,'_').slice(0,20) + '-' + Date.now();
+      const autoCat = { key:newKey, icon:'✨', label:bigName, sublabel:'シートから自動復元', baseSubs:[midName || 'その他'], isCustom:true, auto:true };
+      existing.push(autoCat);
+      saveCustomCategories(existing);
+      // サマリーも保存
+      CUSTOM_SUMMARIES[newKey] = bigName + 'に関するテーマです。';
+      saveCustomSummaries(CUSTOM_SUMMARIES);
+      console.log('Auto-created category from sheet:', bigName);
     }
-  }
-  if(!bigDef && bigName){
-    // 本当に新しいテーマは将来ビジョンに寄せる（住民発案をできるだけ5分類に入れる）
-    bigDef = BASE_CATEGORIES.find(c=>c.label==='将来ビジョン');
+    bigDef = getAllCategories().find(c=>c.label===bigName);
   }
   const statusText = String(o.status||'').trim();
   const isArchived = statusText === '元記事';
   const isMerged = statusText === '新統合';
-  return {id:'row_'+idx, ts:idx, big:bigDef?bigDef.key:('BIG-5'), mid:midName||'街の未来像', title:o.title, summary:o.summary||'', raw:o.content||'', core:o.core||'', change:o.change||'', success:o.success||'', concern:o.concern||'', question:o.question||'', mergeReason:o.reason||'', type:isMerged?'merged':'proposal', status:isArchived?'archived':'active', bigLabel:bigName } ;
+  return {id:'row_'+idx, ts:idx, big:bigDef?bigDef.key:('UNKNOWN_'+bigName), mid:midName, title:o.title, summary:o.summary||'', raw:o.content||'', core:'', change:'', success:'', concern:'', question:'', mergeReason:o.reason||'', type:isMerged?'merged':'proposal', status:isArchived?'archived':'active', bigLabel:bigName } ;
 }
 async function fetchSheetIdeas(){ if(!gasUrl) return []; try{ const sep = gasUrl.includes('?')?'&':'?'; const res = await fetch(gasUrl+sep+'action=get'); const data = await res.json(); if(data.status!=='success'||!Array.isArray(data.opinions)) return []; return data.opinions.map(opinionToIdea).filter(Boolean);}catch(e){return [];}}
 async function loadIdeas(){ if(!REMOTE_LOADED) await fetchRemoteCustomCategories();
@@ -526,25 +543,33 @@ async function loadIdeas(){ if(!REMOTE_LOADED) await fetchRemoteCustomCategories
 }
 
 function getSubs(bigKey){ if(!bigKey || String(bigKey).startsWith('UNKNOWN')) return []; const cat = getAllCategories().find(c=>c.key===bigKey); if(!cat) return []; const subs = (cat.baseSubs||[]).map(label=>({label, dynamic:false})); return subs;}
-function ideasForSub(bigKey, sub){ 
-  return ideas.filter(i=>{
-    if(i.big!==bigKey || i.mid!==sub.label || i.status!=='active') return false;
-    // 5視点・200文字がないものは削除（シードは例外だが今は150文字以上ある）
-    if(i.type!=='seed'){
-      const len = (i.summary||'').length;
-      const has5 = !!(i.core||i.change||i.success||i.concern||i.question);
-      // 住民投稿で50文字未満または5視点が全くないものは非表示（削除扱い）
-      if(len<50 && !has5) return false;
-    }
-    return true;
-  });
-}
+function ideasForSub(bigKey, sub){ return ideas.filter(i=>i.big===bigKey && i.mid===sub.label && i.status==='active');}
 function archivedForSub(bigKey, sub){ return ideas.filter(i=>i.big===bigKey && i.mid===sub.label && i.status==='archived');}
 async function classifyAI(text){
-  const custom = getAllCategories().map(c=>({label:c.label, subs:c.baseSubs}));
+  let custom = getAllCategories().map(c=>({label:c.label, subs:c.baseSubs}));
+  // 住民発案テーマがターゲットの場合、そのテーマを最優先で渡す
+  if(TARGET_CUSTOM_THEME_KEY){
+    const targetCat = getAllCategories().find(c=>c.key===TARGET_CUSTOM_THEME_KEY);
+    if(targetCat){
+      custom = [{label:targetCat.label, subs:targetCat.baseSubs}, ...custom.filter(c=>c.label!==targetCat.label)];
+    }
+  }
   const data = await gasCall({action:'analyze', content:text, customCategories: custom});
   const r = data.result||{};
-  return {bigLabel:r['大分類']||'', midLabel:r['中分類']||'', title:r['推奨タイトル']||'', summary200:r['要約200']||'', core:r['核心']||'', change:r['変化']||'', success:r['成功事例']||'', concern:r['懸念点']||'', question:r['問い']||''};
+  let bigLabel = r['大分類']||'';
+  let midLabel = r['中分類']||'';
+  // ターゲットテーマが設定されている場合は強制的にそのテーマに分類（AI分析はそのまま活かす）
+  if(TARGET_CUSTOM_THEME_KEY){
+    const targetCat = getAllCategories().find(c=>c.key===TARGET_CUSTOM_THEME_KEY);
+    if(targetCat){
+      bigLabel = targetCat.label;
+      // 中分類がターゲットの中にない場合は最初のものを使う
+      if(!targetCat.baseSubs.includes(midLabel)){
+        midLabel = targetCat.baseSubs[0] || midLabel;
+      }
+    }
+  }
+  return {bigLabel:bigLabel, midLabel:midLabel, title:r['推奨タイトル']||'', summary200:r['要約200']||'', core:r['核心']||'', change:r['変化']||'', success:r['成功事例']||'', concern:r['懸念点']||'', question:r['問い']||''};
 }
 async function blendAI(bigKey){ const cat = getCategories().find(c=>c.key===bigKey); const base = AI_BASE_SUMMARY[bigKey]; const active = ideas.filter(i=>i.big===bigKey && i.status==='active'); const citizenText = active.map(a=>`・${a.title}：${a.summary}`).join('\n') || '（まだ市民の声は積み重なっていません）'; try{ const data = await gasCall({action:'blend', bigName:cat.label, baseText:base, citizenText}); return (data.text||'').trim();}catch(e){throw new Error('blend機能はGAS側の追加が必要です');}}
 async function runAI(){ const text = document.getElementById('userInput').value.trim(); if(!text){alert('内容を入力してください');return;} const runBtn=document.getElementById('runBtn'); const loading=document.getElementById('loadingMsg'); const slip=document.getElementById('slip'); runBtn.disabled=true; loading.style.display='inline'; slip.innerHTML='<p class="slip-empty">AIが5つの視点で読み解いています…</p>'; await loadIdeas(); try{ const r=await classifyAI(text); pendingResult={...r, raw:text}; renderSlip(pendingResult);}catch(err){slip.innerHTML=`<p class="slip-empty">失敗：${escapeHtml(err.message||String(err))}</p>`;}finally{runBtn.disabled=false; loading.style.display='none';}}
@@ -575,6 +600,8 @@ async function postIdea(){
   try{
     await gasCall({action:'submit', title:r.title, summary:r.summary200, content:r.raw, bigCatName:r.bigLabel, midCatName:r.midLabel, author: author || '匿名'});
     const msg = `あなたの投稿は ${r.bigLabel} の ${r.midLabel} に格納されました。`;
+    // 住民発案テーマへの投稿後はターゲットを解除（次回は通常投稿に戻る）
+    clearTargetTheme();
     document.getElementById('userInput').value='';
     if(document.getElementById('authorName')) document.getElementById('authorName').value='';
     pendingResult=null;
@@ -645,7 +672,7 @@ async function renderBoard(){
         const list=ideasForSub(c.key,s);
         return `<div class="sub-block"><div class="sub-head" onclick="toggleSub(event,this)"><span>${escapeHtml(s.label)}</span><span class="mono" style="font-size:12px;color:#7c8172;">${list.length}件 ▾</span></div><div class="sub-body">${list.length?list.map(i=>ideaNoteHtml(i)).join(''):'<div class="empty-note">まだ投稿がありません。</div>'}</div></div>`;
       }).join('');
-      return `<div class="accordion-item" style="margin-bottom:8px;border-color:#e8a33d;background:#fffbeb;"><div class="accordion-head ${isThisOpen?'open':''}" onclick="event.stopPropagation();toggleCustomInside('${c.key}')"><div class="left"><span class="ic">${c.icon}</span><span>${escapeHtml(c.label)} <span class="custom-badge">住民発案</span></span><span class="cnt">${count}件</span></div><span>${isThisOpen?'▴':'▾'}</span></div><div class="accordion-body ${isThisOpen?'show':''}" id="custom-body-${c.key}" style="display:${isThisOpen?'block':'none'}"><div style="font-size:12px;color:#5a5f52;margin-bottom:10px;">${escapeHtml(c.sublabel||'')} / 中分類：${escapeHtml((c.baseSubs||[]).join(' / '))}</div>${subsHtml}<div style="margin-top:10px;display:flex;gap:8px;"><button class="big-btn ghost" style="padding:4px 10px;font-size:11px;" onclick="event.stopPropagation();deleteCustomTheme('${c.key}')">削除</button></div></div></div>`;
+      return `<div class="accordion-item" style="margin-bottom:8px;border-color:#e8a33d;background:#fffbeb;"><div class="accordion-head ${isThisOpen?'open':''}" onclick="event.stopPropagation();toggleCustomInside('${c.key}')"><div class="left"><span class="ic">${c.icon}</span><span>${escapeHtml(c.label)} <span class="custom-badge">住民発案</span></span><span class="cnt">${count}件</span></div><span>${isThisOpen?'▴':'▾'}</span></div><div class="accordion-body ${isThisOpen?'show':''}" id="custom-body-${c.key}" style="display:${isThisOpen?'block':'none'}"><div style="font-size:12px;color:#5a5f52;margin-bottom:10px;">${escapeHtml(c.sublabel||'')} / 中分類：${escapeHtml((c.baseSubs||[]).join(' / '))}</div>${subsHtml}<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;"><button class="big-btn amber" style="padding:10px 18px;font-size:13px;" onclick="event.stopPropagation();goToAssistWithTheme('${c.key}')">✍ このテーマ「${escapeHtml(c.label)}」にAIで声を届ける - 5視点・200文字で分析</button><button class="big-btn ghost" style="padding:4px 10px;font-size:11px;" onclick="event.stopPropagation();deleteCustomTheme('${c.key}')">削除</button></div></div></div>`;
     }).join('');
     customFolderHtml = `<div class="accordion-item" style="border:2px dashed var(--amber);"><div class="accordion-head ${isFolderOpen?'open':''}" onclick="toggleCat('${CUSTOM_FOLDER_KEY}')"><div class="left"><span class="ic">📁</span><span>住民発案のテーマ</span><span class="cnt" style="background:var(--amber);color:var(--ink);">${customCats.length}テーマ / ${customTotal}件</span></div><span>${isFolderOpen?'▴':'▾'}</span></div><div class="accordion-body ${isFolderOpen?'show':''}" style="display:${isFolderOpen?'block':'none'}"><div style="font-size:11px;color:#7c8172;margin-bottom:10px;">クリックで中分類を開閉。なるべく既存5分類を優先してください。</div>${inner}</div></div>`;
   }
