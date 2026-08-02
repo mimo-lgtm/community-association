@@ -219,7 +219,7 @@ textarea:focus{outline:none;}
       </g>
     </svg>
     <div class="sticky"><span class="small-city">ASHIYA / YAMATECHO</span>芦屋市 山手町<br>声とアイデアのプラットフォーム</div>
-    <p class="hero-sub"><b>芦屋市 山手町町内会</b> 公式プラットフォーム。山手町、そして芦屋の街への想い、ちょっとした気づき——そのまま書き込むだけでOK。あとはAIが読み取って、5つのテーマにきれいに整理してくれます。</p>
+    <p class="hero-sub"><b>芦屋市 山手町自治会</b> 公式プラットフォーム。山手町、そして芦屋の街への想い、ちょっとした気づき——そのまま書き込むだけでOK。あとはAIが読み取って、5つのテーマにきれいに整理してくれます。</p>
     <div class="hero-cta-row">
       <button class="big-btn amber" onclick="showPage('assist', document.querySelector('nav button:nth-child(3)'))">✍ さっそく声を届けてみる</button>
       <a class="official-link" style="color:#e8a33d;border-color:#e8a33d;" href="https://sites.google.com/view/yamatechoasiya-city/%E3%83%9B%E3%83%BC%E3%83%A0" target="_blank" rel="noopener">🏠 山手町 公式サイト（お知らせ・活動）</a>
@@ -239,7 +239,7 @@ textarea:focus{outline:none;}
     </div>
     <div style="margin-top:16px;padding:12px 14px;background:var(--paper-2);border-radius:8px;font-size:13px;line-height:1.8;">
       <b>💬 声のボード：</b>山手町への気づきは5テーマに自動整理されます。<br>
-      <b>🏙 芦屋市の課題：</b>町内で解決できないことは市全体のハブへ（広報・人口・教育・未来・幼児教育、駅前施設など）。別ウィンドウで開くので戻るのが簡単です。<br>
+      <b>🏙 芦屋市の課題：</b>町内で解決できないことは市全体のハブへ（広報・人口・教育・未来・駅前施設など）。別ウィンドウで開くので戻るのが簡単です。<br>
       <span style="font-size:11.5px;color:#7c8172;">※ボードの初期投稿はたたき台の模擬投稿です。実際の声が増えると統合・更新されます。</span>
     </div>
     <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
@@ -601,9 +601,15 @@ function toggleCat(key){
   }
   renderBoard();
 }
-function openCustomTheme(key){
+async function openCustomTheme(key){
   openCat = key;
+  // 念のため最新の投稿を読み込んでから詳細を表示（違うテーマが表示されるバグ対策）
+  await loadIdeas();
   renderBoard();
+  setTimeout(()=>{
+    const panel=document.getElementById('detailPanel');
+    if(panel) panel.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 150);
 }
 function renderDetail(){
   const panel=document.getElementById('detailPanel');
@@ -629,8 +635,9 @@ function renderDetail(){
         <div class="sub-body" style="display:none;">
           <div style="font-size:12px;color:#5a5f52;margin-bottom:10px;">${escapeHtml(c.sublabel||'')} / 中分類：${escapeHtml((c.baseSubs||[]).join(' / '))}</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-            <button class="big-btn amber" style="padding:6px 12px;font-size:12px;" onclick="openCustomTheme('${c.key}')">📂 詳細を見る・投稿を見る</button>
-            <button class="big-btn ghost" style="padding:4px 10px;font-size:11px;" onclick="deleteCustomTheme('${c.key}')">削除</button>
+            <button class="big-btn amber" style="padding:6px 12px;font-size:12px;" onclick="event.stopPropagation();openCustomTheme('${c.key}')">📂 詳細を見る・投稿を見る</button>
+            <button class="big-btn ghost" style="padding:6px 12px;font-size:12px;" onclick="event.stopPropagation();openCat='${CUSTOM_FOLDER_KEY}';renderBoard();document.getElementById('corkGrid').scrollIntoView({behavior:'smooth'})">← 一覧に戻る</button>
+            <button class="big-btn ghost" style="padding:4px 10px;font-size:11px;" onclick="event.stopPropagation();deleteCustomTheme('${c.key}')">削除</button>
           </div>
           <div style="font-size:11px;color:#7c8172;">このテーマへの投稿は「あなたの投稿は ${escapeHtml(c.label)} に格納されました」と表示されます。</div>
         </div>
@@ -680,7 +687,37 @@ async function createNewTheme(){
   const btn = document.getElementById('createThemeBtn');
   if(!name){ alert('テーマ名を入力してください'); return; }
   if(getAllCategories().some(c=>c.label===name)){ alert('同名のテーマが既にあります'); return; }
-  btn.disabled=true; status.textContent='🤖 AIが中分類を考えています…（数秒かかります）';
+  btn.disabled=true;
+  status.textContent='🤖 既存の5分類に入るかチェックしています…';
+
+  const keywordMap = [
+    {kw:['防災','防犯','地震','火災','避難','パトロール'], label:'防災・防犯'},
+    {kw:['道路','側溝','斜面','ゴミ','環境','景観','緑','清掃'], label:'インフラ・環境'},
+    {kw:['交流','イベント','祭り','新住民','班長','役員','自治会'], label:'コミュニティ'},
+    {kw:['福祉','見守り','高齢','子育て','ペット','健康','孤立'], label:'福祉・見守り'},
+    {kw:['空き家','DX','担い手','未来','将来','ビジョン'], label:'将来ビジョン'}
+  ];
+  for(const m of keywordMap){
+    if(m.kw.some(k=>name.includes(k) || desc.includes(k))){
+      status.innerHTML=`⚠️ 「${escapeHtml(name)}」は既存の <b>${m.label}</b> に含まれます。<br>新テーマを作らず、そのまま投稿すると <b>${m.label}</b> に自動で分類され「あなたの投稿は ${m.label} に格納されました」と表示されます。<br><br><button class='big-btn ghost' style='padding:6px 12px;font-size:12px;' onclick='closeAddThemeModal();showPage("assist", document.querySelector("nav button:nth-child(3)"))'>そのまま声を届ける</button>`;
+      btn.disabled=false;
+      return;
+    }
+  }
+  try{
+    const customForCheck = BASE_CATEGORIES.map(c=>({label:c.label, subs:c.baseSubs}));
+    const check = await gasCall({action:'analyze', content: `テーマ名：${name} 説明：${desc}`, customCategories: customForCheck});
+    const r = check.result||check;
+    const bigLabel = r['大分類']||'';
+    if(BASE_CATEGORIES.some(b=>b.label===bigLabel || bigLabel.includes(b.label))){
+      const matched = BASE_CATEGORIES.find(b=>b.label===bigLabel || bigLabel.includes(b.label)) || {label:bigLabel};
+      status.innerHTML=`💡 AI判定：この内容は既存の <b>${escapeHtml(matched.label)}</b> に分類されます。<br>新テーマを作る代わりに、そのまま投稿してください。<br><br><button class='big-btn ghost' style='padding:6px 12px;font-size:12px;' onclick='closeAddThemeModal();showPage("assist", document.querySelector("nav button:nth-child(3)"))'>そのまま声を届ける</button>`;
+      btn.disabled=false;
+      return;
+    }
+  }catch(e){ console.log('既存分類チェック失敗', e); }
+
+  status.textContent='🤖 AIが中分類を考えています…';
   let subs = [];
   try{
     // GAS側に generateTheme アクションがあれば使う、なければフォールバック
