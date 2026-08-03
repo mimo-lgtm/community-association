@@ -769,7 +769,7 @@ function escapeHtml(str){ return (str||'').replace(/[&<>"']/g, m=>({'&':'&amp;',
 let micRecognition=null; let micActive=false;
 function toggleMic(){ const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR){alert('Chromeでお試しください');return;} const btn=document.getElementById('micBtn'); if(micActive){micRecognition.stop();return;} micRecognition=new SR(); micRecognition.lang='ja-JP'; micRecognition.continuous=true; micRecognition.interimResults=false; micRecognition.onstart=()=>{micActive=true; btn.textContent='⏹ 停止';}; micRecognition.onend=()=>{micActive=false; btn.textContent='🎤 音声で入力する';}; micRecognition.onresult=(e)=>{let t=''; for(let i=e.resultIndex;i<e.results.length;i++) if(e.results[i].isFinal) t+=e.results[i][0].transcript; if(t){const ta=document.getElementById('userInput'); ta.value=(ta.value?ta.value+' ':'')+t;}}; micRecognition.start();}
 
-function goToAssistWithTheme(null){ const btn=document.querySelectorAll('nav button')[1]; showPage('assist', btn); }
+function goToAssistWithTheme(key){ const btn=document.querySelectorAll('nav button')[1]; showPage('assist', btn); }
 function closeAddThemeModal(){}
 async function createNewTheme(){
   const name = document.getElementById('newThemeName').value.trim();
