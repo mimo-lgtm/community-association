@@ -330,7 +330,9 @@ function shouldMergeToBase(label, desc){
 }
 function loadCustomCategories(){ try{ return JSON.parse(localStorage.getItem(CUSTOM_KEY)||'[]'); }catch(e){ return []; } }
 function saveCustomCategories(l){ localStorage.setItem(CUSTOM_KEY, JSON.stringify(l)); }
-function loadCustomSummaries(){ try{ return JSON.parse(localStorage.getItem(CUSTOM_SUMMARY_KEY)||'{}'); }catch(e){ return {}; } }
+function loadCustomSummaries(){ 
+  try{ return JSON.parse(localStorage.getItem(CUSTOM_SUMMARY_KEY)||'{}'); }catch(e){ return {}; } 
+}
 function saveCustomSummaries(m){ localStorage.setItem(CUSTOM_SUMMARY_KEY, JSON.stringify(m)); }
 let CUSTOM_SUMMARIES = loadCustomSummaries();
 
